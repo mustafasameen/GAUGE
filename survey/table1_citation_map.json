@@ -1,0 +1,22 @@
+{
+ "UniST": "yuan2024_240211838",
+ "TrajFM": "trajfm",
+ "MobilityGPT": "haydari2026_240203264",
+ "UniMove": "unimove",
+ "MoveGPT": "movegpt",
+ "Mobility-LLM": "mobilityllm",
+ "MoveFM-R": "movefmr",
+ "CityGPT / CityEval": "feng2025_240613948",
+ "PMT": "wu2026_240602578",
+ "UniTraj": "zhu2025_241103859",
+ "UrbanDiT": "yuan2025_241112164",
+ "GenMove": "genmove",
+ "TrajAgent": "du2025_241020445",
+ "UrbanGPT": "li2024_240300813",
+ "UrbanVerse": "urbanverse",
+ "MoveGCL": "movegcl",
+ "ELLMob": "ellmob",
+ "Geo-Llama": "geollama",
+ "UrbanLLaVA / UBench": "urbanllava",
+ "Trajectory from Scratch": "merten2025_251120610"
+}

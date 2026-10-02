@@ -1,0 +1,19 @@
+# Python 3.10 or newer.
+# Question generation, scoring, tables and figures need only the first six packages.
+numpy
+pandas
+pyarrow
+matplotlib
+fonttools
+pypdf
+# Running the open-weight models (gauge/eval_factqa.py). The runs in the paper used
+# Python 3.12, torch 2.11.0 and transformers 5.14.1.
+torch
+transformers
+accelerate
+# GPT-4o arm (gauge/run_frontier_probe.py).
+openai
+# Optional: only for eval_factqa.py --init-from (a LoRA adapter on top of a model).
+# peft
+#
+# System tool: the figure scripts call Ghostscript (the command `gs`) to crop the figures.

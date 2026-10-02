@@ -1,3 +1,11 @@
-__pycache__/
+# Inputs and everything the pipeline writes
+# Maintainer-only: lists the strings that must not appear in the repository, so it must not be published.
+# Python
 *.pyc
 .DS_Store
+__pycache__/
+data/
+logs/
+outputs/
+results/
+tools/scan_internal.py

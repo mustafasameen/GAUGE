@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper."
+title: "GAUGE: code for recovering mobility descriptors from individual records with language models"
+type: software
+authors:
+  - family-names: Sameen
+    given-names: Mustafa
+    affiliation: "University of Florida"
+license: MIT
+repository-code: "https://github.com/mustafasameen/GAUGE"
+url: "https://mustafasameen.github.io/GAUGE/"
+preferred-citation:
+  type: conference-paper
+  title: "GAUGE: How Large Language Models Recover Mobility Descriptors from Individual Records"
+  authors:
+    - family-names: Sameen
+      given-names: Mustafa
+      affiliation: "University of Florida"
+  collection-title: "Proceedings of the 2nd ACM SIGSPATIAL International Workshop on Urban Mobility Foundation Models"
+  conference:
+    name: "UMFM '26"
+    location: "Riverside, CA, USA"
+  publisher:
+    name: "ACM"
+  year: 2026
+  doi: "10.1145/3849729.3856126"
