@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<!--
+  Page design adapted from HugAgent (https://github.com/jajamoa/HugAgent), used under the MIT License.
+
+  MIT License
+
+  Copyright (c) 2026 The HugAgent Authors
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GAUGE: How Large Language Models Recover Mobility Descriptors from Individual Records</title>
+<meta name="description" content="GAUGE asks language models to recover mobility descriptors, such as radius of gyration, from one person's location record. 34,200 questions, 21 descriptor families, five open-weight models.">
+<meta name="author" content="Mustafa Sameen">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://mustafasameen.github.io/GAUGE/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%230072B2'/%3E%3Cpath d='M13 43a19 19 0 0 1 38 0' fill='none' stroke='white' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M32 43l10-13' stroke='white' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GAUGE">
+<meta property="og:title" content="GAUGE: How Large Language Models Recover Mobility Descriptors from Individual Records">
+<meta property="og:description" content="GAUGE asks language models to recover mobility descriptors, such as radius of gyration, from one person's location record. 34,200 questions, 21 descriptor families, five open-weight models.">
+<meta property="og:url" content="https://mustafasameen.github.io/GAUGE/">
+<meta property="og:image" content="https://mustafasameen.github.io/GAUGE/static/img/fig_overview.png">
+<meta property="og:image:width" content="1646">
+<meta property="og:image:height" content="541">
+<meta property="og:image:alt" content="Overview of GAUGE: one person's location record, the descriptor distributions the field scores, and the per-person descriptors GAUGE asks a model to recover.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="GAUGE: How Large Language Models Recover Mobility Descriptors from Individual Records">
+<meta name="twitter:description" content="GAUGE asks language models to recover mobility descriptors, such as radius of gyration, from one person's location record. 34,200 questions, 21 descriptor families, five open-weight models.">
+<meta name="twitter:image" content="https://mustafasameen.github.io/GAUGE/static/img/fig_overview.png">
+<meta name="twitter:image:alt" content="Overview of GAUGE: one person's location record, the descriptor distributions the field scores, and the per-person descriptors GAUGE asks a model to recover.">
+
+<meta name="citation_title" content="GAUGE: How Large Language Models Recover Mobility Descriptors from Individual Records">
+<meta name="citation_author" content="Sameen, Mustafa">
+<meta name="citation_publication_date" content="2026">
+<meta name="citation_conference_title" content="Proceedings of the 2nd ACM SIGSPATIAL International Workshop on Urban Mobility Foundation Models">
+<meta name="citation_doi" content="10.1145/3849729.3856126">
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0}
+:root{--bg:#fff;--card:#fff;--ink:#111110;--ink2:#4f4e49;--mut:#74726b;--line:#e0e0e0;--accent:#0072B2;--accent-ink:#005a8d;--on-accent:#fff;--tint:#f3f8fc;--tint2:#eaf3fa;--bad:#D55E00;--pre:#fafaf8;--ul:#b3d2e6;--dash:#bcd6e8;color-scheme:light}
+html{scroll-behavior:smooth}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{font-family:"Inconsolata",ui-monospace,monospace;color:var(--ink);background:var(--bg);line-height:1.6;font-size:16.5px;overflow-x:hidden}
+.wrap{max-width:880px;margin:0 auto;padding:0 24px}
+a{color:var(--accent-ink);text-decoration:none;border-bottom:1px solid var(--ul)}
+a:hover{border-bottom-color:var(--accent-ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* top strip */
+.topbar{border-bottom:1px solid var(--line);font-size:13.5px;color:var(--ink2)}
+.topbar .wrap{display:flex;justify-content:space-between;align-items:center;padding-top:11px;padding-bottom:11px;gap:12px;flex-wrap:wrap;line-height:1}
+.brandline{font-size:12px;font-weight:600;letter-spacing:.14em;color:var(--mut)}
+.topbar nav{display:flex;gap:16px;flex-wrap:wrap;margin-left:auto;align-items:center}
+.topbar a{border-bottom:none;color:var(--ink2)}
+.topbar a:hover{color:var(--accent-ink)}
+/* hero */
+.hero{padding:52px 0 8px;text-align:center}
+.venuepill{display:inline-flex;align-items:center;gap:8px;background:#000;color:#f5f5f5;border:1px solid #4a4a45;border-radius:999px;padding:7px 15px;font-size:13px;font-weight:700;letter-spacing:.04em;line-height:1}
+.venuepill::before{content:"";width:7px;height:7px;border-radius:50%;background:#f5f5f5}
+h1{font-size:31px;font-weight:800;letter-spacing:.01em;line-height:1.35;margin:18px 0 14px}
+.tagline{font-size:19px;color:var(--ink);font-weight:500}
+.tagline em{font-style:normal;color:var(--accent-ink);border-bottom:2px solid var(--accent)}
+.heroauthors{max-width:720px;margin:26px auto 0;font-size:15px;line-height:1.9;color:var(--ink)}
+.tldrbox{max-width:720px;margin:26px auto 0;border:1px solid var(--accent);background:var(--tint);padding:14px 18px;text-align:left;font-size:14.5px;color:var(--ink2);line-height:1.7}
+.tldrbox p{margin:0}
+.lb{color:var(--accent-ink);font-weight:800;margin-right:7px;text-transform:uppercase;font-size:11.5px;letter-spacing:.09em}
+.hl{margin-top:11px;border-top:1px dashed var(--dash);padding-top:11px}
+.hl ul{list-style:none;margin:4px 0 0;padding:0}
+.hl li{position:relative;padding-left:16px;margin:2px 0}
+.hl li::before{content:"";position:absolute;left:2px;top:.66em;width:6px;height:6px;background:var(--accent)}
+.btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:26px 0 8px}
+.btn{border:1px solid var(--ink);padding:7px 16px;font-size:14px;font-weight:600;color:var(--ink);border-bottom-width:1px}
+.btn:hover{background:var(--ink);color:var(--bg)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{background:var(--accent-ink);border-color:var(--accent-ink);color:var(--on-accent)}
+.teaser{margin:44px auto 0;max-width:1040px;padding:0 24px}
+.zoom{display:block;border-bottom:none}
+.teaser img{width:100%;height:auto;display:block;border:1px solid var(--line)}
+.pipefig{margin-top:16px;border:1px solid var(--line);display:block}
+.pipefig img{width:100%;height:auto;display:block}
+.pipefig.narrow{max-width:620px;margin-left:auto;margin-right:auto}
+.figcap{font-size:13px;color:var(--mut);max-width:760px;margin:10px auto 0;text-align:center}
+/* sections */
+section.wrap{margin-top:46px}
+.kicker{font-size:13px;font-weight:700;letter-spacing:.14em;color:var(--accent-ink);text-transform:uppercase;margin-bottom:10px}
+h2{font-size:27px;font-weight:700;line-height:1.3;margin-bottom:14px;letter-spacing:-.01em}
+p.body{color:var(--ink2);max-width:700px;margin-bottom:14px}
+/* cards */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.card{border:1px solid var(--line);background:var(--card);padding:20px 22px}
+.card h3{font-size:17.5px;font-weight:700;margin-bottom:6px;line-height:1.35}
+.cnum{font-size:26px;font-weight:800;line-height:1.1;color:var(--accent-ink);margin-bottom:8px}
+.card p{font-size:14.5px;color:var(--ink2)}
+.card p.csrc{font-size:12px;color:var(--mut);margin-top:8px}
+.card.wide{grid-column:1/-1}
+.figs{align-items:start}
+.figs figure{margin:0}
+.figs .pipefig{margin-top:0}
+/* stats strip */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--line);margin-top:8px}
+.stat{padding:14px 14px;border-left:1px solid var(--line);font-size:13.5px;color:var(--ink2)}
+.stat:first-child{border-left:none}
+.stat b{display:block;font-size:21px;color:var(--ink);font-weight:800}
+/* try a question */
+.quiz{background:var(--tint);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:46px 0 42px;margin-top:46px}
+.qcard{background:var(--card);border:1px solid var(--line);padding:22px 24px;margin-top:18px}
+.qhead{font-size:12.5px;color:var(--bad);font-weight:700;letter-spacing:.05em;margin-bottom:10px}
+.prompt{border:1px solid var(--line);background:var(--pre);margin-bottom:10px}
+.prompt pre{border:0;margin:0;background:none;padding:8px 12px;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink2)}
+.prompt pre.p-rows{max-height:236px;overflow:auto;background:var(--card);color:var(--ink);border-top:1px dashed var(--line);border-bottom:1px dashed var(--line)}
+.prompt pre.p-rows span{display:block}
+.fullprompt{margin:0 0 14px;font-size:13px}
+.fullprompt summary{cursor:pointer;color:var(--accent-ink);width:fit-content}
+.fullprompt pre{margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12.5px}
+.guessrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.guessrow input{border:1px solid var(--ink2);background:var(--card);color:var(--ink);padding:7px 12px;font:inherit;font-size:15px;width:200px;max-width:100%;min-width:0;border-radius:0}
+.opt{border:1px solid var(--ink);background:var(--card);padding:7px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--ink);border-radius:0}
+.opt:hover{background:var(--ink);color:var(--bg)}
+.qreveal{display:none;margin-top:14px;border-left:3px solid var(--accent);padding:10px 14px;background:var(--tint2);font-size:14px;color:var(--ink2)}
+.qreveal:focus{outline:none}
+.qreveal b{color:var(--ink)}
+.qreveal p{margin:0 0 8px}
+.qreveal .rv{margin-top:12px;padding-top:10px;border-top:1px dashed var(--dash)}
+.verdict{font-weight:800;font-size:14px;letter-spacing:.03em;margin-bottom:4px;color:var(--ink)}
+.verdict.ok{color:var(--accent-ink)} .verdict.mid{color:#b07400} .verdict.no{color:var(--bad)}
+.ansline{font-size:16px}
+.ansnum{font-size:22px;font-weight:800;color:var(--accent-ink)}
+.mut{color:var(--mut);font-size:13px}
+.hint{font-size:12.5px;color:var(--mut);margin-top:8px}
+/* citation */
+pre{background:var(--pre);border:1px solid var(--line);padding:12px 14px;font-family:inherit;font-size:13px;overflow-x:auto;margin-top:14px;line-height:1.5;color:var(--ink)}
+.bibwrap{position:relative}
+.bibwrap pre{padding-top:44px}
+.copybtn{position:absolute;top:24px;right:10px;padding:4px 12px;font-size:12.5px}
+/* footer */
+footer{border-top:1px solid var(--line);margin-top:46px;padding:36px 0 48px;font-size:13.5px;color:var(--mut)}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+footer .full{flex-basis:100%}
+footer .credit{flex-basis:100%;font-size:12.5px}
+@media(max-width:760px){
+  h1{font-size:21px;padding:0 6px}.tagline{font-size:16.5px}
+  h2{font-size:21px}
+  .deskbr{display:none}
+  .hero.wrap{padding:36px 18px 8px}
+  .heroauthors{font-size:14px;line-height:1.7}
+  section.wrap{margin-top:39px}
+  .quiz{margin-top:84px;padding:56px 0 48px}
+  .qcard{padding:16px 14px}
+  .prompt pre{font-size:12.5px}
+  .teaser{padding:0 16px}
+  .wrap{padding:0 18px}
+  .topbar nav{gap:12px;font-size:12.5px}
+  .cards{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr;border-right:none}
+  .stat{border-right:1px solid var(--line);border-top:1px solid var(--line)}
+  .stat:nth-child(-n+2){border-top:none}
+  .stat:last-child{grid-column:1/-1}
+  body{font-size:15.5px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <span class="brandline">UNIVERSITY OF FLORIDA &middot; 2026</span>
+  <nav>
+    <a href="#findings">Findings</a>
+    <a href="#results">Results</a>
+    <a href="#demo">Try it</a>
+    <a href="static/GAUGE_UMFM26.pdf">Paper</a>
+    <a href="https://github.com/mustafasameen/GAUGE" target="_blank" rel="noopener">Code</a>
+    <a href="#bibtex">BibTeX</a>
+  </nav>
+</div></div>
+
+<header class="hero wrap">
+  <div class="venuepill">UMFM @ ACM SIGSPATIAL 2026</div>
+  <h1>GAUGE: How Large Language Models Recover <br class="deskbr">Mobility Descriptors from Individual Records</h1>
+  <div class="tagline">Can a language model <em>recover</em> mobility descriptors from one person's location record?</div>
+  <p class="heroauthors">Mustafa Sameen</p>
+
+  <div class="tldrbox">
+    <p><b class="lb">tl;dr</b> On short records, count, sequence and retrieval descriptors come back. Stated directly, no spatial-geometric descriptor ever clears its baseline.</p>
+    <div class="hl">
+      <b class="lb">Highlights</b>
+      <ul>
+        <li>Reverses the usual direction: a model recovers a descriptor from a record.</li>
+        <li>Exact answers and exact baselines, a second axis beside distributional scores.</li>
+        <li>Five open-weight models, plus GPT-4o on a matched subset.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="btns">
+    <a class="btn primary" href="static/GAUGE_UMFM26.pdf">Paper</a>
+    <a class="btn" href="https://github.com/mustafasameen/GAUGE" target="_blank" rel="noopener">Code</a>
+    <a class="btn" href="#bibtex">BibTeX</a>
+  </div>
+</header>
+
+<div class="teaser">
+  <a class="zoom" href="static/img/fig_overview.svg" target="_blank" rel="noopener" title="Open the figure at full size"><picture>
+    <source type="image/svg+xml" srcset="static/img/fig_overview.svg">
+    <img src="static/img/fig_overview.png" width="1646" height="541" alt="Three panels: a person location record as a table on the left, a descriptor distribution over a population in the middle, and on the right the same model scoring well above baseline on distinct places per day and below baseline on radius of gyration.">
+  </picture></a>
+  <p class="figcap">The same model recovers distinct places per day but not radius of gyration. Figure 1 in the paper.</p>
+</div>
+
+<section class="wrap" id="stats">
+  <div class="stats">
+    <div class="stat"><b>34,200</b> questions</div>
+    <div class="stat"><b>21</b> descriptor families</div>
+    <div class="stat"><b>7</b> record lengths</div>
+    <div class="stat"><b>5</b> open-weight models</div>
+    <div class="stat"><b>16,388</b> distinct people</div>
+  </div>
+</section>
+
+<section class="wrap" id="findings">
+  <div class="kicker">Key findings</div>
+  <h2>Recovery splits by descriptor class rather than by difficulty.</h2>
+  <div class="cards">
+    <div class="card">
+      <div class="cnum">20 of 20</div>
+      <h3>Geometric descriptors never clear their baseline.</h3>
+      <p>Four geometric families, five models, every record length from 32 to 512 rows. GPT-4o clears no geometric cell either.</p>
+      <p class="csrc" title="Section 4.1 of the paper">&sect;4.1</p>
+    </div>
+    <div class="card">
+      <div class="cnum">89%</div>
+      <h3>Recovery is bimodal in record length.</h3>
+      <p>Of 105 model-family pairs, 47 clear their baseline on the longest record, 46 never do, and only 12 clear it and then stop.</p>
+      <p class="csrc" title="Section 4.3 of the paper">&sect;4.3</p>
+    </div>
+    <div class="card">
+      <div class="cnum">&minus;0.414</div>
+      <h3>The amount of record binds recovery.</h3>
+      <p>Rank correlation falls by 0.414 as the record grows around 16 items of state. At fixed length it does not fall as required state grows.</p>
+      <p class="csrc" title="Section 4.3 of the paper">&sect;4.3</p>
+    </div>
+    <div class="card">
+      <div class="cnum">1,155 of 1,155</div>
+      <h3>Programs reproduce the reference on held-out records.</h3>
+      <p>Asked for Python, Llama-3.1-70B writes programs that match the reference on 50 held-out records: 1,155 of 1,155. Three of five models do this.</p>
+      <p class="csrc" title="Section 4.7 of the paper">&sect;4.7</p>
+    </div>
+    <div class="card wide">
+      <div class="cnum">53 of 100</div>
+      <h3>Models order people while stating no individual's value.</h3>
+      <p>They do so on geometric quantities in 53 of 100 settings. A permutation of the true values reproduces every distributional score while destroying every individual.</p>
+      <p class="csrc" title="Section 4.1 of the paper">&sect;4.1</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="results">
+  <div class="kicker">Results</div>
+  <h2>No model lifts the geometric families out of the threshold at any length.</h2>
+  <a class="pipefig" href="static/img/fig_decay.svg" target="_blank" rel="noopener"><picture>
+    <source type="image/svg+xml" srcset="static/img/fig_decay.svg">
+    <img src="static/img/fig_decay.png" width="2083" height="1154" loading="lazy" decoding="async" alt="Five line panels, one per descriptor class, each plotting all five models against record length on a log axis, with a shaded band marking the presence threshold in the windowed-count and spatial-geometric panels.">
+  </picture></a>
+  <p class="figcap">Normalized gain by record length for each descriptor class. Figure 5 in the paper.</p>
+
+  <div class="cards figs" style="margin-top:30px">
+    <figure>
+      <a class="pipefig" href="static/img/fig_ladder.svg" target="_blank" rel="noopener"><picture>
+        <source type="image/svg+xml" srcset="static/img/fig_ladder.svg">
+        <img src="static/img/fig_ladder.png" width="1445" height="1163" loading="lazy" decoding="async" alt="Two dot plots with horizontal confidence intervals. Panel a shows three decomposition controls, panel b shows five scaffold ladder rungs, both with one point per model against a dashed zero line.">
+      </picture></a>
+      <p class="figcap">Largest of a list: every model clears. Distance between two points: none does. Figure 4 in the paper.</p>
+    </figure>
+    <figure>
+      <a class="pipefig" href="static/img/fig_frontier.svg" target="_blank" rel="noopener"><picture>
+        <source type="image/svg+xml" srcset="static/img/fig_frontier.svg">
+        <img src="static/img/fig_frontier.png" width="1095" height="1067" loading="lazy" decoding="async" alt="Two dot plots with horizontal confidence intervals. Panel a shows four spatial-geometric families, panel b shows two contrast families, each with six models scored on the same items.">
+      </picture></a>
+      <p class="figcap">Same items, six models. GPT-4o leads on the contrast families and clears no geometric cell. Figure 3 in the paper.</p>
+    </figure>
+  </div>
+</section>
+
+<div class="quiz" id="demo">
+  <div class="wrap">
+    <div class="kicker">Try a question</div>
+    <h2>The failure is in carrying the computation out rather than in knowing what it is.</h2>
+    <p class="body">This is the task the models get: read a record, then state its radius of gyration.</p>
+
+    <div class="qcard">
+      <div class="qhead">Made-up record, not from the dataset</div>
+<!--DEMO-PROMPT:BEGIN-->
+<div class="prompt">
+<pre class="p-head" data-quote>Here is a person’s location record. Each line is day, timeslot, place.</pre>
+<pre class="p-rows" tabindex="0" aria-label="The 32 rows of the made-up record, scrollable"><span data-madeup>d23 t14 x-254 y-149
+d23 t15 x-254 y-149
+d23 t16 x-254 y-149
+d23 t17 x-254 y-149
+d23 t18 x-261 y-144
+d23 t19 x-269 y-140
+d23 t20 x-269 y-140
+d23 t21 x-269 y-140
+d23 t22 x-269 y-140
+d23 t23 x-269 y-140
+d23 t25 x-263 y-145
+d23 t26 x-263 y-145
+d23 t28 x-269 y-140
+d23 t29 x-269 y-140
+d23 t30 x-269 y-140
+d23 t31 x-269 y-140
+d23 t36 x-256 y-156
+d23 t37 x-256 y-156
+d23 t40 x-254 y-149
+d23 t41 x-254 y-149
+d23 t42 x-254 y-149
+d24 t20 x-254 y-149
+d24 t21 x-254 y-149
+d24 t22 x-254 y-149
+d24 t23 x-254 y-149
+d24 t26 x-263 y-143
+d24 t27 x-263 y-143
+d24 t31 x-254 y-149
+d24 t32 x-254 y-149
+d24 t40 x-254 y-149
+d24 t41 x-254 y-149
+d24 t42 x-254 y-149</span></pre>
+<pre class="p-q" data-quote>Question: Treating each unit on the x and y axes as 500 metres, what is the radius of gyration of this person’s locations, in kilometres?</pre>
+</div>
+<details class="fullprompt">
+<summary>Show full prompt</summary>
+<pre class="p-full"><span data-quote>You answer questions about location records. Reply with ONLY the value, on a single line of the form ‘Answer: &lt;value&gt;’. Do not explain. If you cannot determine the value, reply ‘Answer: unknown’.</span>
+
+<span data-quote>Here is a person’s location record. Each line is day, timeslot, place.</span>
+<span data-madeup>d23 t14 x-254 y-149
+d23 t15 x-254 y-149</span>
+...
+<span data-quote>Question: Treating each unit on the x and y axes as 500 metres, what is the radius of gyration of this person’s locations, in kilometres? The radius of gyration is the root-mean-square distance of the visited points from their mean position. Answer with a whole number of kilometres.</span>
+<span data-quote>Answer with the value only.</span></pre>
+</details>
+<!--DEMO-PROMPT:END-->
+      <form id="guess-form" class="guessrow" autocomplete="off" novalidate>
+        <input id="guess" name="guess" type="text" inputmode="decimal" placeholder="your answer, km" aria-label="Your answer in kilometres">
+        <button class="opt" type="submit">Check</button>
+        <button class="opt" type="button" id="show-answer">Show the answer</button>
+      </form>
+      <noscript><p class="hint">This demo needs JavaScript.</p></noscript>
+
+      <div class="qreveal" id="reveal" aria-live="polite" tabindex="-1">
+        <div class="verdict" id="verdict"></div>
+        <p id="verdict-detail"></p>
+<!--DEMO-KEY:BEGIN-->
+<div id="demo-key" class="keyfacts" data-key="4" data-value="4.014">
+<p class="ansline">Exact answer: <b class="ansnum" data-madeup>4 km</b> <span class="mut">(<span data-madeup>4.014</span> before rounding)</span></p>
+</div>
+<!--DEMO-KEY:END-->
+        <p class="rv"><b>Tolerance:</b> none. <span data-quote>A decimal scores wrong however close.</span> Looser tolerances do not help: <span data-quote>None exceeds the baseline at a tolerance of ±1 absolute or ±5, ±10 or ±25 percent relative</span>.</p>
+        <p><b>Models:</b> <span data-quote>Asked to state a value directly under greedy decoding, spatial-geometric descriptors never clear their baseline, at any record length or tolerance we score.</span></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="wrap" id="bibtex">
+  <div class="kicker">Citation</div>
+  <div class="bibwrap">
+    <button class="opt copybtn" type="button" id="copy-bib" aria-label="Copy the BibTeX entry to the clipboard">Copy</button>
+<pre id="bibtex-block" tabindex="0">@inproceedings{sameen2026gauge,
+  title     = {{GAUGE}: How Large Language Models Recover Mobility Descriptors from Individual Records},
+  author    = {Sameen, Mustafa},
+  booktitle = {Proceedings of the 2nd ACM SIGSPATIAL International Workshop on Urban Mobility Foundation Models},
+  series    = {UMFM '26},
+  year      = {2026},
+  address   = {Riverside, CA, USA},
+  publisher = {ACM},
+  doi       = {10.1145/3849729.3856126}
+}</pre>
+  </div>
+</section>
+
+<footer><div class="wrap">
+  <span>&copy; 2026 Mustafa Sameen. The paper is licensed under CC BY 4.0.</span>
+  <span>Built on <a href="https://doi.org/10.1038/s41597-024-03237-9" target="_blank" rel="noopener">YJMob100K (Yabe et al., 2024)</a></span>
+  <span class="full">The 2nd ACM SIGSPATIAL International Workshop on Urban Mobility Foundation Models, Riverside, CA, USA, November 03&ndash;06, 2026.</span>
+  <span class="credit"><a href="https://github.com/jajamoa/HugAgent" target="_blank" rel="noopener">Page design adapted from HugAgent (MIT)</a></span>
+</div></footer>
+
+<script>
+(function(){
+  var $=function(s,r){return (r||document).querySelector(s);};
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* BibTeX copy button */
+  var cb=$('#copy-bib'), bb=$('#bibtex-block'), timer=null;
+  function fallbackCopy(text){
+    var ta=document.createElement('textarea');
+    ta.value=text; ta.setAttribute('readonly','');
+    ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';
+    document.body.appendChild(ta); ta.select();
+    var ok=false; try{ok=document.execCommand('copy');}catch(e){ok=false;}
+    document.body.removeChild(ta); return ok;
+  }
+  function flash(ok){
+    cb.textContent=ok?'Copied':'Press Ctrl+C';
+    clearTimeout(timer);
+    timer=setTimeout(function(){cb.textContent='Copy';},2000);
+  }
+  if(cb&&bb){
+    cb.addEventListener('click',function(){
+      var text=bb.textContent.replace(/\s+$/,'')+'\n';
+      if(navigator.clipboard&&window.isSecureContext){
+        navigator.clipboard.writeText(text).then(function(){flash(true);},function(){flash(fallbackCopy(text));});
+      }else{flash(fallbackCopy(text));}
+    });
+  }
+
+  /* Try a question */
+  var form=$('#guess-form'), keyEl=$('#demo-key'), rev=$('#reveal'), verdict=$('#verdict'),
+      detail=$('#verdict-detail'), input=$('#guess'), show=$('#show-answer');
+  if(form&&keyEl&&rev&&verdict&&detail&&input){
+    var K=Number(keyEl.getAttribute('data-key'));
+    // "4" and "4.0" are the same whole number; a real decimal stays a decimal and is not rounded onto the key.
+    function parse(raw){
+      var s=String(raw).trim().replace(/\s*km$/i,'').replace(',','.');
+      return /^-?\d+(\.\d+)?$/.test(s)?Number(s):null;
+    }
+    // Same buckets as the paper's error breakdown: exact, within a factor of two, or further off.
+    function judge(x){
+      if(x===K)return 'exact';
+      var r=x/K;
+      return (r<=2&&r>=0.5)?'close':'far';
+    }
+    function open(kind,head,text){
+      verdict.className='verdict '+kind;
+      verdict.textContent=head;
+      detail.textContent=text;
+      rev.style.display='block';
+      rev.focus({preventScroll:true});
+      rev.scrollIntoView({behavior:reduce?'auto':'smooth',block:'nearest'});
+    }
+    form.addEventListener('submit',function(e){
+      e.preventDefault();
+      var x=parse(input.value);
+      if(x===null){
+        input.setAttribute('aria-invalid','true'); input.focus();
+        open('','Please type a number.','Digits only, with an optional decimal point.');
+        return;
+      }
+      input.removeAttribute('aria-invalid');
+      var you='You answered '+x+' km. ', k=judge(x);
+      if(k==='exact'){open('ok','Exact match.',you+'That equals the key, the only thing the paper counts as correct.');}
+      else if(k==='close'){open('mid','Not exact, so the paper scores it wrong.',you+'It is within a factor of two of the key.');}
+      else{open('no','Not exact, and over a factor of two from the key.',you);}
+    });
+    if(show){show.addEventListener('click',function(){open('','Here is the key.','No guess was entered.');});}
+  }
+})();
+</script>
+</body>
+</html>
