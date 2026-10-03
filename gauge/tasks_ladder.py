@@ -17,9 +17,9 @@ of them:
 Every rung holds the same quantity, the same people, the same answer format and the same scorer;
 only the amount of pre-computation changes. The rung where accuracy jumps is where the failure
 sits. The gold distribution is identical across rungs by construction, so the majority baseline is
-identical too and a jump cannot come from an easier answer space; tally_ladder.py asserts this.
+identical too and a jump cannot come from an easier answer space; generate_ladder.py asserts this.
 
-Usage: imported by tally_ladder.py. Run `python gauge/tasks_ladder.py` for the self-tests.
+Usage: imported by generate_ladder.py. Run `python gauge/tasks_ladder.py` for the self-tests.
 """
 from __future__ import annotations
 

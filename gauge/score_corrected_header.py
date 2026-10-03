@@ -2,20 +2,20 @@
 """Score the corrected-header rerun and compare it with the reported run, cell by cell.
 
 The coordinate prompts of the reported question set name their columns "day, timeslot, place" while
-the rows show x and y. The corrected set (tally_v41.py --only-coord) names them "day, timeslot, x,
-y". This script scores the five models on the corrected set and reports what the header change did
-to each of the 100 geometric settings (model, family and length). It uses the same definitions as
-family_cis.py: baseline = modal-answer share over the cell's golds, gain = (acc - baseline) /
-(1 - baseline), and a bootstrap over people. The gold answers are identical between the two draws
-and only the prompt header differs, so the baselines must match cell for cell. That is asserted
-and not assumed.
+the rows show x and y. The corrected set (generate_questions.py --only-coord) names them "day,
+timeslot, x, y". This script scores the five models on the corrected set and reports what the header
+change did to each of the 100 geometric settings (model, family and length). It uses the same
+definitions as family_cis.py: baseline = modal-answer share over the cell's golds, gain = (acc -
+baseline) / (1 - baseline), and a bootstrap over people. The gold answers are identical between the
+two draws and only the prompt header differs, so the baselines must match cell for cell. That is
+asserted and not assumed.
 
-Input: results/tally_v41_geomfix.jsonl, results/v41_family_cis.json and the five runs
-results/v41geo_<tag>.json.
-Output: results/v41_geomfix_compare.json.
+Input: results/questions_corrected_header.jsonl, results/family_cis.json and the five runs
+results/corrected-header_<tag>.json.
+Output: results/scored_corrected_header.json.
 
 Usage:
-  python gauge/score_geomfix.py
+  python gauge/score_corrected_header.py
 """
 import collections
 import glob
@@ -26,7 +26,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from eval_factqa import norm  # noqa: E402
+from eval_model import norm  # noqa: E402
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 NBOOT, MINCL = 2000, 5
@@ -48,8 +48,8 @@ def boot(uids, cor, seed=0):
 
 
 def main():
-    items_p = f"{ROOT}/results/tally_v41_geomfix.jsonl"
-    old_p = f"{ROOT}/results/v41_family_cis.json"
+    items_p = f"{ROOT}/results/questions_corrected_header.jsonl"
+    old_p = f"{ROOT}/results/family_cis.json"
     for p in (items_p, old_p):
         if not os.path.exists(p):
             sys.exit(f"MISSING: {p}")
@@ -63,14 +63,14 @@ def main():
     if set(fams) - set(GEOM):
         sys.exit(f"corrected draw holds non-geometric families: {set(fams) - set(GEOM)}")
 
-    runs = sorted(glob.glob(f"{ROOT}/results/v41geo_*.json"))
+    runs = sorted(glob.glob(f"{ROOT}/results/corrected-header_*.json"))
     runs = [r for r in runs if not r.endswith((".ckpt", ".partial"))]
     if not runs:
-        sys.exit("no v41geo_* runs on disk")
+        sys.exit("no corrected-header_* runs on disk")
 
     out, rows, skipped = {}, [], []
     for rp in runs:
-        model = os.path.basename(rp).replace("v41geo_", "").replace(".json", "")
+        model = os.path.basename(rp).replace("corrected-header_", "").replace(".json", "")
         blob = json.load(open(rp))
         raw = (blob.get("raw") or {}).get("full")
         if raw is None:
@@ -134,7 +134,7 @@ def main():
         n_clearing_new=int(sum(r["clears_new"] for r in paired)),
         n_clearing_old=int(sum(r["clears_old"] for r in paired)),
         skipped=[{"model": m, "why": w} for m, w in skipped], cells=out)
-    op = f"{ROOT}/results/v41_geomfix_compare.json"
+    op = f"{ROOT}/results/scored_corrected_header.json"
     json.dump(summary, open(op, "w"), indent=1)
     print(f"\nwrote {op}")
 

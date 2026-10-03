@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the 34,200-question GAUGE benchmark from the YJMob100K export.
 
-For each descriptor family (tasks_v41.py) and record length, the generator draws windows of
+For each descriptor family (tasks_main.py) and record length, the generator draws windows of
 consecutive records from individual people, renders the prompt, and computes the gold answer from
 the rows the model will see. There are 21 families, 7 record lengths (8 to 512 rows) and 108
 family-by-length settings, with 300 questions per setting (600 for the retrieval probe). Place
@@ -18,12 +18,12 @@ Every item is checked as it is built:
 
 With --only-coord only the 6,000 coordinate (geometric) items are written.
 
-Input: data/yjmob/yjmob_v4.parquet, written by export_v4.py.
-Output: a JSON-lines items file (default results/tally_v41.jsonl).
+Input: data/yjmob/yjmob_export.parquet, written by export_yjmob.py.
+Output: a JSON-lines items file (default results/questions.jsonl).
 
 Usage:
-  python gauge/tally_v41.py --data data/yjmob/yjmob_v4.parquet --out results/tally_v41.jsonl
-  python gauge/tally_v41.py --data data/yjmob/yjmob_v4.parquet --only-coord --out results/tally_v41_geomfix.jsonl
+  python gauge/generate_questions.py --data data/yjmob/yjmob_export.parquet --out results/questions.jsonl
+  python gauge/generate_questions.py --data data/yjmob/yjmob_export.parquet --only-coord --out results/questions_corrected_header.jsonl
 """
 from __future__ import annotations
 
@@ -40,9 +40,9 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from tally_v3 import relabel, render, SLOTS_PER_DAY, SPLIT_DAY
-from tally_v4 import MAX_PROMPT_CHARS, rigid, render_xy
-import tasks_v41 as T
+from place_records import relabel, render, SLOTS_PER_DAY, SPLIT_DAY
+from coord_records import MAX_PROMPT_CHARS, rigid, render_xy
+import tasks_main as T
 
 # W starts at 16, not 8. At W=8 the gold equals W in 25-42% of items (and W is stated in the
 # question, so a model can copy it), and a record-free constant scores 50-67% under +/-1 tolerance
@@ -54,12 +54,12 @@ POSITIONS = [0.1, 0.3, 0.5, 0.7, 0.9]
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", default="data/yjmob/yjmob_v4.parquet")
+    ap.add_argument("--data", default="data/yjmob/yjmob_export.parquet")
     ap.add_argument("--spans", default="8,16,32,64,128,256,512")
     ap.add_argument("--per-cell", type=int, default=300)
     ap.add_argument("--users", type=int, default=20000)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="results/tally_v41.jsonl")
+    ap.add_argument("--out", default="results/questions.jsonl")
     # Write only the coordinate (tier F) families, the 6,000 geometric items. The place families
     # render "d.. t.. p.." and their column header already matches their rows, so they are not
     # regenerated.
@@ -217,7 +217,7 @@ def main():
         for lab, sp, n in shortfall[:20]:
             print(f"    {lab:<22} span {sp:>4}  {n}/{a.per_cell}")
     print("\nNEXT: check the cells for degeneracy before using this file "
-          "(gauge/screen_degeneracy.py on a pilot run).")
+          "(gauge/screen_degeneracy.py on a first run).")
 
 
 if __name__ == "__main__":

@@ -20,19 +20,19 @@ byte-identical, that the descriptor, units and formula phrases are present on bo
 "person" and "location" appear only on the mobility side.
 
 The gold is never recomputed here. Each item's "a" field was written upstream by the F_* functions
-in tasks_v41.py from the transformed points, with no notion of framing. This script copies the item
+in tasks_main.py from the transformed points, with no notion of framing. This script copies the item
 (`dict(it)`) and adds `prompt_nomobility`.
 
-Each output item records its position in the source file as `geomfix_idx`. Run eval_factqa.py with
+Each output item records its position in the source file as `geomfix_idx`. Run eval_model.py with
 `--conds full,nomobility` over the output to generate both conditions in one job.
 
-Input: results/tally_v41_geomfix.jsonl (from tally_v41.py --only-coord).
-Output: results/tally_nomobility.jsonl (30 items per setting by default; the paper's arm uses 75,
+Input: results/questions_corrected_header.jsonl (from generate_questions.py --only-coord).
+Output: results/questions_framing.jsonl (30 items per setting by default; the paper's arm uses 75,
 which gives 1,500 items).
 
 Usage:
-  python gauge/make_nomobility.py --peek 3        (dry run: prints pairs and writes nothing)
-  python gauge/make_nomobility.py --per-cell 75 --out results/tally_nomobility.jsonl
+  python gauge/make_framing.py --peek 3        (dry run: prints pairs and writes nothing)
+  python gauge/make_framing.py --per-cell 75 --out results/questions_framing.jsonl
 """
 from __future__ import annotations
 
@@ -45,11 +45,11 @@ import re
 import sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-SRC = os.path.join(ROOT, "results", "tally_v41_geomfix.jsonl")
+SRC = os.path.join(ROOT, "results", "questions_corrected_header.jsonl")
 GEOM = {"gyration_km", "max_distance", "total_distance", "longest_jump"}
 
 # ---- factor 2: the one clause inside `q` that names the person as the mover or visitor of the
-# points. (old, new): `old` is copied verbatim from the `q` text in tasks_v41.py, not reconstructed,
+# points. (old, new): `old` is copied verbatim from the `q` text in tasks_main.py, not reconstructed,
 # so a later wording change there fails loudly (AssertionError) instead of silently producing a
 # mismatched pair.
 ENTITY_SWAP = {
@@ -71,7 +71,7 @@ INVARIANT_PHRASES = {
 }
 
 MOB_INTRO = "Here is a person's location record."
-NOMOB_INTRO = "Here is a set of numbered points."
+RELABELLED_INTRO = "Here is a set of numbered points."
 
 
 # Residual mobility verbs that survive ENTITY_SWAP because they sit inside the descriptor's
@@ -89,7 +89,7 @@ MOBILITY_WORDS = r"\b(person|person's|travelled|visited|moved)\b"
 
 def neutralize_q(family, q):
     old, new = ENTITY_SWAP[family]
-    assert old in q, f"{family}: expected clause not found in q -- tasks_v41.py wording changed"
+    assert old in q, f"{family}: expected clause not found in q -- tasks_main.py wording changed"
     out = q.replace(old, new, 1)
     assert out != q, f"{family}: substitution did not fire"
     for d_old, d_new in DEFINITION_DEMOBILISE.get(family, []):
@@ -100,8 +100,8 @@ def neutralize_q(family, q):
     return out
 
 
-def render_nomobility(head, body, neutral_q):
-    return (f"{NOMOB_INTRO} Each line is {head}.\n\n{body}\n\n"
+def render_relabelled(head, body, neutral_q):
+    return (f"{RELABELLED_INTRO} Each line is {head}.\n\n{body}\n\n"
             f"Question: {neutral_q}\nAnswer with the value only.")
 
 
@@ -109,37 +109,37 @@ def build_pair(it):
     """Return (item with prompt_nomobility added, body string). The mobility side -- prompt_full,
     prompt_blind, "a", and every other key -- passes through untouched via dict(it)."""
     assert it["prompt_full"].startswith(MOB_INTRO), \
-        "source item's header text has changed -- check tally_v41.py::emit()"
+        "source item's header text has changed -- check generate_questions.py::emit()"
     parts = it["prompt_full"].split("\n\n")
     head = parts[0].split("Each line is ")[1].rstrip(".")
     body = parts[1]
     neutral_q = neutralize_q(it["family"], it["q"])
     out = dict(it)
-    out["prompt_nomobility"] = render_nomobility(head, body, neutral_q)
+    out["prompt_nomobility"] = render_relabelled(head, body, neutral_q)
     return out, body
 
 
 def check_pair(it, out, body):
     """Every assert here is the machine-checkable form of one part of the single-factor claim."""
     fam = it["family"]
-    mob, nomob = out["prompt_full"], out["prompt_nomobility"]
+    mob, relabelled = out["prompt_full"], out["prompt_nomobility"]
     assert out["a"] == it["a"], f"{fam}: gold changed (must never happen)"
-    nomob_body = nomob.split("\n\n")[1]
-    assert nomob_body == body, f"{fam}: record body is not byte-identical across the pair"
+    relabelled_body = relabelled.split("\n\n")[1]
+    assert relabelled_body == body, f"{fam}: record body is not byte-identical across the pair"
     nums_mob = re.findall(r"-?\d+", body)
-    nums_nomob = re.findall(r"-?\d+", nomob_body)
-    assert nums_mob == nums_nomob, f"{fam}: coordinate digits diverged"
+    nums_relabelled = re.findall(r"-?\d+", relabelled_body)
+    assert nums_mob == nums_relabelled, f"{fam}: coordinate digits diverged"
     for phrase in INVARIANT_PHRASES[fam]:
-        assert phrase in mob and phrase in nomob, \
+        assert phrase in mob and phrase in relabelled, \
             f"{fam}: invariant phrase {phrase!r} missing from one side of the pair"
     assert re.search(r"\bperson\b", mob, re.I), f"{fam}: mobility prompt lost its own framing"
-    assert not re.search(r"\bperson\b", nomob, re.I), f"{fam}: 'person' leaked into non-mobility prompt"
-    assert not re.search(r"\blocations?\b", nomob, re.I), f"{fam}: 'location' leaked into non-mobility prompt"
+    assert not re.search(r"\bperson\b", relabelled, re.I), f"{fam}: 'person' leaked into non-mobility prompt"
+    assert not re.search(r"\blocations?\b", relabelled, re.I), f"{fam}: 'location' leaked into non-mobility prompt"
 
 
 def stub_generate(gold):
     """Stands in for the GPU call. NO MODEL IS LOADED OR CALLED. Returns a marker-anchored string
-    so the REAL parser (eval_factqa.norm) has something to extract, proving the
+    so the REAL parser (eval_model.norm) has something to extract, proving the
     prompt -> generation -> parser -> compare-to-gold plumbing is condition-blind without spending
     any compute on it."""
     return f"(stub, no model called) Answer: {gold}"
@@ -147,12 +147,12 @@ def stub_generate(gold):
 
 def peek(base, n):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from eval_factqa import norm  # the SAME parser the GPU harness uses -- imported, not reimplemented
+    from eval_model import norm  # the SAME parser the GPU harness uses -- imported, not reimplemented
 
     print(f"\n=== PEEK: {n} matched pairs, stub generation, no model loaded ===\n")
     shown_fams = set()
     shown = 0
-    for geomfix_idx, it in base:
+    for src_idx, it in base:
         if it["family"] in shown_fams or shown >= n:
             continue
         out, body = build_pair(it)
@@ -164,11 +164,11 @@ def peek(base, n):
                                               f"byte-identical across the pair, not just displayed "
                                               f"the same) ..."] + rows[-1:])
         print(f"--- pair {shown}/{n}  family={it['family']}  span={it['span']}  uid={it['uid']}  "
-              f"geomfix_idx={geomfix_idx} ---")
+              f"src_idx={src_idx} ---")
         print(f"[MOBILITY]\n{MOB_INTRO} Each line is "
               f"{out['prompt_full'].split(chr(10))[0].split('Each line is ')[1]}\n\n{body_excerpt}\n\n"
               f"Question: {it['q']}\nAnswer with the value only.")
-        print(f"\n[NON-MOBILITY]\n{NOMOB_INTRO} Each line is "
+        print(f"\n[NON-MOBILITY]\n{RELABELLED_INTRO} Each line is "
               f"{out['prompt_full'].split(chr(10))[0].split('Each line is ')[1]}\n\n{body_excerpt}\n\n"
               f"Question: {neutralize_q(it['family'], it['q'])}\nAnswer with the value only.")
         gold_mobility = it["a"]
@@ -195,14 +195,14 @@ def main():
     ap.add_argument("--per-cell", type=int, default=30,
                      help="items per (family, span) cell, deterministic first-N "
                           "(the convention of make_templates.py). 300 = the full corrected-header set.")
-    ap.add_argument("--out", default=os.path.join(ROOT, "results", "tally_nomobility.jsonl"))
+    ap.add_argument("--out", default=os.path.join(ROOT, "results", "questions_framing.jsonl"))
     ap.add_argument("--peek", type=int, default=0,
                      help="print N matched pairs with a stubbed generation and exit; writes "
                           "nothing.")
     a = ap.parse_args()
 
     if not os.path.exists(a.items):
-        sys.exit(f"MISSING: {a.items} -- run: python gauge/tally_v41.py --only-coord "
+        sys.exit(f"MISSING: {a.items} -- run: python gauge/generate_questions.py --only-coord "
                   f"(the arm is built on the corrected-header coordinate items)")
 
     src = [json.loads(l) for l in open(a.items)]
@@ -230,12 +230,12 @@ def main():
         return
 
     out_items = []
-    for geomfix_idx, it in base:
+    for src_idx, it in base:
         out, body = build_pair(it)
-        # Position in tally_v41_geomfix.jsonl equals the position in raw["full"] of every
-        # results/v41geo_*.json (the alignment rule that score_geomfix.py uses), so the mobility side of this
-        # arm can be scored from generations that already exist.
-        out["geomfix_idx"] = geomfix_idx
+        # Position in questions_corrected_header.jsonl equals the position in raw["full"] of every
+        # results/corrected-header_*.json (the alignment rule that score_corrected_header.py uses),
+        # so the mobility side of this arm can be scored from generations that already exist.
+        out["geomfix_idx"] = src_idx
         check_pair(it, out, body)
         out_items.append(out)
 
@@ -252,7 +252,7 @@ def main():
     print(f"\nwrote {a.out}\n  {len(out_items):,} items | md5 {md5}")
     print(f"  cells {len(fam_span)} | families {sorted({o['family'] for o in out_items})}")
     print("\nNEXT (not run by this script -- no GPU/cluster/network touched here):")
-    print("  python gauge/eval_factqa.py --items " + a.out + " --model <hf-id> \\")
+    print("  python gauge/eval_model.py --items " + a.out + " --model <hf-id> \\")
     print("      --style terse --conds full,nomobility --max-new 24 --max-len 32768 --out <path>")
 
 

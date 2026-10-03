@@ -17,7 +17,7 @@ Input: data/yjmob100k/yjmob100k-dataset1.csv.gz (download from Zenodo, DOI 10.52
 Output: the parquet file and a manifest next to it (the same name ending in _manifest.json).
 
 Usage:
-  python gauge/export_v4.py --out data/yjmob/yjmob_v4.parquet
+  python gauge/export_yjmob.py --out data/yjmob/yjmob_export.parquet
 """
 import argparse, json, os
 import numpy as np, pandas as pd
@@ -28,7 +28,7 @@ SPLIT_DAY=60; K_RANKS=512; OOV=K_RANKS
 ap=argparse.ArgumentParser()
 ap.add_argument("--users",type=int,default=20000)
 ap.add_argument("--max-rows",type=int,default=34_000_000)
-ap.add_argument("--out",default="data/yjmob/yjmob_v4.parquet")
+ap.add_argument("--out",default="data/yjmob/yjmob_export.parquet")
 a=ap.parse_args()
 
 print(f"reading up to {a.max_rows:,} rows ...",flush=True)

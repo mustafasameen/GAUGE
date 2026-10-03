@@ -19,7 +19,7 @@ Design:
 
 Quantities: cmp_gyration, cmp_maxdist, cmp_totaldist, cmp_longjump, cmp_daydistinct.
 
-Usage: imported by tally_compare.py.
+Usage: imported by generate_compare.py.
 """
 from __future__ import annotations
 

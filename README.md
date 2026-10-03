@@ -42,8 +42,11 @@ steps below show how.
 | `tools/` | small helpers that connect the steps, and the reproduction test |
 | `survey/` | the inputs of Table 1 (the capability survey) |
 
-Names with `v41` (`tally_v41.py`, `v41core_<tag>.json`) belong to the 34,200-question set, version 4.1
-of the generator. The scorers look for these names.
+File names follow one scheme, and the scorers look for these names. Question files are
+`results/questions*.jsonl`. A model run is `results/<arm>_<tag>.json`, where `<tag>` is the model
+tag of the table in the Models section and `<arm>` is the name of the arm (step 3 lists them):
+`main_<tag>.json` holds the runs on the 34,200-question set, except that the Gemma-3-12B run is
+`primary_gemma3_12b.json`. Scored results are `results/<name>.json`.
 
 ## Setup
 
@@ -81,7 +84,7 @@ Each step lists what it reproduces in the paper.
 ### 1. Export YJMob100K
 
 ```bash
-python gauge/export_v4.py --out data/yjmob/yjmob_v4.parquet
+python gauge/export_yjmob.py --out data/yjmob/yjmob_export.parquet
 ```
 
 Takes the first 20,000 people in the file and writes one parquet file (23,441,802 rows, md5
@@ -91,74 +94,74 @@ Takes the first 20,000 people in the file and writes one parquet file (23,441,80
 
 ```bash
 # The 34,200-question set (Sections 3.2 and 4.1 to 4.3, Tables 2, 3, 6 and 7)
-python gauge/tally_v41.py --data data/yjmob/yjmob_v4.parquet --out results/tally_v41_generated.jsonl
-python tools/reported_header.py results/tally_v41_generated.jsonl results/tally_v41.jsonl
+python gauge/generate_questions.py --data data/yjmob/yjmob_export.parquet --out results/questions_generated.jsonl
+python tools/reported_header.py results/questions_generated.jsonl results/questions.jsonl
 
 # The 6,000 coordinate questions with the corrected column header (Appendix B)
-python gauge/tally_v41.py --data data/yjmob/yjmob_v4.parquet --only-coord --out results/tally_v41_geomfix.jsonl
+python gauge/generate_questions.py --data data/yjmob/yjmob_export.parquet --only-coord --out results/questions_corrected_header.jsonl
 
 # Decomposition controls and scaffold ladder (Sections 4.2 and 4.5, Figure 4)
-python gauge/tally_control.py --data data/yjmob/yjmob_v4.parquet --out results/tally_control.jsonl
-python gauge/tally_ladder.py --data data/yjmob/yjmob_v4.parquet --out results/tally_ladder.jsonl
+python gauge/generate_control.py --data data/yjmob/yjmob_export.parquet --out results/questions_control.jsonl
+python gauge/generate_ladder.py --data data/yjmob/yjmob_export.parquet --out results/questions_ladder.jsonl
 
 # Cross-record attribution (Section 4.4)
-python gauge/tally_whichK.py --data data/yjmob/yjmob_v4.parquet --out results/tally_whichK.jsonl
+python gauge/generate_attribution.py --data data/yjmob/yjmob_export.parquet --out results/questions_attribution.jsonl
 
 # Which of two people is larger, at record length 64, then 32, 128 and 256, then 512 (Section 4.5)
-python gauge/tally_compare.py --data data/yjmob/yjmob_v4.parquet --span 64 --per-cell 50 --out results/tally_compare.jsonl
-python gauge/tally_compare.py --data data/yjmob/yjmob_v4.parquet --span 32 --per-cell 25 --out results/tally_compare_s32.jsonl
-python gauge/tally_compare.py --data data/yjmob/yjmob_v4.parquet --span 128 --per-cell 25 --out results/tally_compare_s128.jsonl
-python gauge/tally_compare.py --data data/yjmob/yjmob_v4.parquet --span 256 --per-cell 25 --out results/tally_compare_s256.jsonl
-cat results/tally_compare_s32.jsonl results/tally_compare_s128.jsonl results/tally_compare_s256.jsonl > results/tally_compare_spans.jsonl
-python gauge/tally_compare.py --data data/yjmob/yjmob_v4.parquet --span 512 --seed 512 --out results/tally_compare_512.jsonl
+python gauge/generate_compare.py --data data/yjmob/yjmob_export.parquet --span 64 --per-cell 50 --out results/questions_compare.jsonl
+python gauge/generate_compare.py --data data/yjmob/yjmob_export.parquet --span 32 --per-cell 25 --out results/questions_compare_s32.jsonl
+python gauge/generate_compare.py --data data/yjmob/yjmob_export.parquet --span 128 --per-cell 25 --out results/questions_compare_s128.jsonl
+python gauge/generate_compare.py --data data/yjmob/yjmob_export.parquet --span 256 --per-cell 25 --out results/questions_compare_s256.jsonl
+cat results/questions_compare_s32.jsonl results/questions_compare_s128.jsonl results/questions_compare_s256.jsonl > results/questions_compare_spans.jsonl
+python gauge/generate_compare.py --data data/yjmob/yjmob_export.parquet --span 512 --seed 512 --out results/questions_compare_512.jsonl
 
 # Five prompt wordings (Section 4.5)
 python gauge/make_templates.py
-python tools/make_probe_templates.py
+python tools/make_retrieval_templates.py
 
 # Program arm: the same records asked for a value and for a Python expression (Sections 4.6 and 4.7)
-python gauge/tally_tool.py --data data/yjmob/yjmob_v4.parquet --out results/tally_tool.jsonl
+python gauge/generate_tool.py --data data/yjmob/yjmob_export.parquet --out results/questions_tool.jsonl
 
 # Framing arm and its stripped rung (Section 4.6, Appendix E)
-python gauge/make_nomobility.py --per-cell 75 --out results/tally_nomobility.jsonl
+python gauge/make_framing.py --per-cell 75 --out results/questions_framing.jsonl
 python gauge/make_stripped.py
 
 # Reasoning-budget arm (Section 4.6, Appendix E)
-python gauge/make_cot_items.py --per-cell 20 --out results/tally_v41cot.jsonl
+python gauge/make_cot_items.py --per-cell 20 --out results/questions_cot.jsonl
 
 # Subsets for the GPT-4o arm (Section 4.1, Figure 3) and the sampling arm (Section 4.5)
-python gauge/make_subset.py --items results/tally_v41.jsonl --per-cell 30 --seed 0 --families gyration_km,max_distance,total_distance,longest_jump,day_distinct,retrieve_p50 --out results/tally_v41_frontier.jsonl
-python tools/subset_to_indices.py --items results/tally_v41.jsonl --subset results/tally_v41_frontier.jsonl --out results/subset_allspans.json --note "per-cell 30, seed 0, families=6, ALL spans"
-python tools/draw_sampling_subset.py --items results/tally_v41.jsonl --out results/tally_v41_mitigate.jsonl
+python gauge/make_subset.py --items results/questions.jsonl --per-cell 30 --seed 0 --families gyration_km,max_distance,total_distance,longest_jump,day_distinct,retrieve_p50 --out results/questions_frontier.jsonl
+python tools/subset_to_indices.py --items results/questions.jsonl --subset results/questions_frontier.jsonl --out results/subset_allspans.json --note "per-cell 30, seed 0, families=6, ALL spans"
+python tools/draw_sampling_subset.py --items results/questions.jsonl --out results/questions_sampling.jsonl
 ```
 
 Notes on step 2:
 
-- A full run of `tally_v41.py` takes about a minute and a half. It ends with a traceback
+- A full run of `generate_questions.py` takes about a minute and a half. It ends with a traceback
   (`UnboundLocalError ... hashlib`) after the file is complete. The file has 34,200 lines.
-- `tally_v41.py` names the columns of a coordinate prompt `day, timeslot, x, y`. The paper's main
-  tables were scored with `day, timeslot, place` on those 6,000 prompts, and Appendix B reports the
-  `x, y` version as a rerun. `tools/reported_header.py` changes that one phrase and nothing else,
-  which gives the question set that was scored.
+- `generate_questions.py` names the columns of a coordinate prompt `day, timeslot, x, y`. The
+  paper's main tables were scored with `day, timeslot, place` on those 6,000 prompts, and Appendix B
+  reports the `x, y` version as a rerun. `tools/reported_header.py` changes that one phrase and
+  nothing else, which gives the question set that was scored.
 - The questions are drawn with a fixed seed. These files rebuild byte for byte:
 
 | File | Items | md5 |
 | --- | --- | --- |
-| `tally_v41.jsonl` | 34,200 | `127b67859e28c8728293c459be78c047` |
-| `tally_v41_geomfix.jsonl` | 6,000 | `51e0445d2f39ea7e562dffd6b59aa81d` |
-| `tally_control.jsonl` | 2,250 | `3df5b504696160b0864b72d7f239a7af` |
-| `tally_ladder.jsonl` | 2,000 | `5f8e45208c0bba4b238e06f39eb41d57` |
-| `tally_whichK.jsonl` | 1,191 | `068bd388a889bb1f28dea7dd254b47c5` |
-| `tally_compare.jsonl` | 3,000 | `7c0b2e38734cb3d78bc395cf87fd2116` |
-| `tally_compare_spans.jsonl` | 4,500 | `e5aa026b2287512fa9e4dc253ccee6fd` |
-| `tally_compare_512.jsonl` | 3,000 | `88cee185da7dc6ad8506034532358103` |
-| `tally_templates.jsonl` | 5,000 | `fcec812105ffe2af096afd3f4615d916` |
-| `tally_templates_probe.jsonl` | 2,750 | `8827130d428e3f9176b9dc072fcae0d4` |
-| `tally_tool.jsonl` | 2,400 | `92a3e7ba833500d8ccdf67271002620e` |
-| `tally_nomobility.jsonl` | 1,500 | `24700ebadac456a30e4e33b1e34e602f` |
-| `tally_stripped.jsonl` | 1,500 | `ac29acbac7884a07d667512365a00152` |
-| `tally_v41cot.jsonl` | 400 | `94502382f363ada635d6288b99bc3456` |
-| `tally_v41_mitigate.jsonl` | 4,050 | `908d627df177663900672cdd53c2cbbd` |
+| `questions.jsonl` | 34,200 | `127b67859e28c8728293c459be78c047` |
+| `questions_corrected_header.jsonl` | 6,000 | `51e0445d2f39ea7e562dffd6b59aa81d` |
+| `questions_control.jsonl` | 2,250 | `3df5b504696160b0864b72d7f239a7af` |
+| `questions_ladder.jsonl` | 2,000 | `5f8e45208c0bba4b238e06f39eb41d57` |
+| `questions_attribution.jsonl` | 1,191 | `068bd388a889bb1f28dea7dd254b47c5` |
+| `questions_compare.jsonl` | 3,000 | `7c0b2e38734cb3d78bc395cf87fd2116` |
+| `questions_compare_spans.jsonl` | 4,500 | `e5aa026b2287512fa9e4dc253ccee6fd` |
+| `questions_compare_512.jsonl` | 3,000 | `88cee185da7dc6ad8506034532358103` |
+| `questions_templates.jsonl` | 5,000 | `fcec812105ffe2af096afd3f4615d916` |
+| `questions_templates_retrieval.jsonl` | 2,750 | `8827130d428e3f9176b9dc072fcae0d4` |
+| `questions_tool.jsonl` | 2,400 | `92a3e7ba833500d8ccdf67271002620e` |
+| `questions_framing.jsonl` | 1,500 | `24700ebadac456a30e4e33b1e34e602f` |
+| `questions_stripped.jsonl` | 1,500 | `ac29acbac7884a07d667512365a00152` |
+| `questions_cot.jsonl` | 400 | `94502382f363ada635d6288b99bc3456` |
+| `questions_sampling.jsonl` | 4,050 | `908d627df177663900672cdd53c2cbbd` |
 | `subset_allspans.json` | 960 | `e133cccd24fd1f8c547538992a120d6a` |
 
 `tools/test_generator_reproduces.sh PARQUET WORKDIR` checks the first two rows.
@@ -169,8 +172,8 @@ Every question is asked with the record (`full`) and without it (`blind`). Check
 first, then run one model:
 
 ```bash
-python gauge/preflight_items.py results/tally_v41.jsonl
-python gauge/eval_factqa.py --items results/tally_v41.jsonl --model google/gemma-3-12b-it --style terse --bs 64 --tok-budget 40000 --max-new 24 --max-len 32768 --conds full,blind --out results/v41pilot_gemma3_12b.json
+python gauge/preflight_items.py results/questions.jsonl
+python gauge/eval_model.py --items results/questions.jsonl --model google/gemma-3-12b-it --style terse --bs 64 --tok-budget 40000 --max-new 24 --max-len 32768 --conds full,blind --out results/primary_gemma3_12b.json
 ```
 
 `slurm/run_model.sbatch` runs one model per array task, and `slurm/submit_all.sh` prints (or, with
@@ -180,27 +183,27 @@ runs and the names the scorers look for:
 
 | Arm | Items file | Output | Paper |
 | --- | --- | --- | --- |
-| Main set | `tally_v41.jsonl` | `v41core_<tag>.json` (`v41pilot_gemma3_12b.json` for Gemma-3-12B) | 4.1 to 4.3 |
-| Corrected header | `tally_v41_geomfix.jsonl` | `v41geo_<tag>.json` | Appendix B |
-| Controls | `tally_control.jsonl` | `v41ctrl2_<tag>.json` | 4.2 |
-| Ladder | `tally_ladder.jsonl` | `v41lad_<tag>.json` | 4.5 |
-| Attribution | `tally_whichK.jsonl` | `v41whichK_<tag>.json` | 4.4 |
-| Comparison | `tally_compare*.jsonl` | `v41cmp_`, `v41cmpS_`, `v41cmp512_<tag>.json` | 4.5 |
-| Wording | `tally_templates*.jsonl` | `v41tmpl_`, `v41tmplP_<tag>.json` | 4.5 |
-| Sampling | `tally_v41_mitigate.jsonl` | `v41mit_<tag>.json.full.ckpt` | 4.5 |
-| Framing | `tally_nomobility.jsonl`, `tally_stripped.jsonl` | `v41nomob_`, `v41strip_<tag>.json` | 4.6 |
-| Reasoning | `tally_v41cot.jsonl` | `v41cot4k_`, `v41cot8k_<tag>.json` | 4.6 |
-| Program | `tally_tool.jsonl` | `v41tool_<tag>.json` | 4.6, 4.7 |
+| Main set | `questions.jsonl` | `main_<tag>.json` (`primary_gemma3_12b.json` for Gemma-3-12B) | 4.1 to 4.3 |
+| Corrected header | `questions_corrected_header.jsonl` | `corrected-header_<tag>.json` | Appendix B |
+| Controls | `questions_control.jsonl` | `control_<tag>.json` | 4.2 |
+| Ladder | `questions_ladder.jsonl` | `ladder_<tag>.json` | 4.5 |
+| Attribution | `questions_attribution.jsonl` | `attribution_<tag>.json` | 4.4 |
+| Comparison | `questions_compare*.jsonl` | `compare_`, `compare-spans_`, `compare-512_<tag>.json` | 4.5 |
+| Wording | `questions_templates*.jsonl` | `templates_`, `templates-retrieval_<tag>.json` | 4.5 |
+| Sampling | `questions_sampling.jsonl` | `sampling_<tag>.json.full.ckpt` | 4.5 |
+| Framing | `questions_framing.jsonl`, `questions_stripped.jsonl` | `framing_`, `stripped_<tag>.json` | 4.6 |
+| Reasoning | `questions_cot.jsonl` | `cot-4k_`, `cot-8k_<tag>.json` | 4.6 |
+| Program | `questions_tool.jsonl` | `tool_<tag>.json` | 4.6, 4.7 |
 
-`preflight_items.py` fails on `tally_tool.jsonl`, because the key of a program question is a number
+`preflight_items.py` fails on `questions_tool.jsonl`, because the key of a program question is a number
 while the model writes an expression. Skip it for that file (`PREFLIGHT=0` in the launcher).
 
 The GPT-4o arm answers the 960-question subset through the OpenAI API:
 
 ```bash
 export OPENAI_API_KEY=...
-python gauge/run_frontier_probe.py --peek 2 --subset results/subset_allspans.json
-python gauge/run_frontier_probe.py --model gpt-4o --subset results/subset_allspans.json --out results/frontier_gpt4o.json
+python gauge/run_frontier.py --peek 2 --subset results/subset_allspans.json
+python gauge/run_frontier.py --model gpt-4o --subset results/subset_allspans.json --out results/frontier_gpt4o.json
 ```
 
 ### 4. Score
@@ -214,26 +217,26 @@ python gauge/distributional_rung.py              # Table 3, Section 4.1: three-l
 python gauge/error_taxonomy.py                   # Figure 2 and the abstention rates of Section 4.3: what the models answer instead
 python gauge/tolerance_gate.py                   # Section 4.1: tolerance scoring
 python gauge/continuous_metric.py                # Section 4.1: continuous error metrics
-python gauge/screen_degeneracy.py --items results/tally_v41.jsonl --runs results/v41pilot_gemma3_12b.json results/v41core_*.json --out results/degeneracy_screen_v41.json   # Section 3.4
+python gauge/screen_degeneracy.py --items results/questions.jsonl --runs results/primary_gemma3_12b.json results/main_*.json --out results/degeneracy_screen.json   # Section 3.4
 python gauge/score_blind_all_models.py           # Section 3.4: blind control, five models
 python gauge/make_blind_decomposition.py         # Section 3.4: blind control, Gemma-3-12B
-python gauge/score_geomfix.py                    # Appendix B: corrected header against reported header
+python gauge/score_corrected_header.py           # Appendix B: corrected header against reported header
 python gauge/score_control_ladder.py             # Section 4.2 and 4.5, Figure 4
 python gauge/score_control_tolerance.py          # Section 4.2: controls within a factor of two
 python gauge/score_compare.py                    # Section 4.5: comparison arm
 python gauge/score_templates.py                  # Section 4.5: wording study
-python gauge/score_mitigation.py                 # Section 4.5: sampling arm
-python gauge/score_whichK.py                     # Section 4.4: cross-record attribution
-python gauge/score_nomobility.py                 # Section 4.6: framing
+python gauge/score_sampling.py                   # Section 4.5: sampling arm
+python gauge/score_attribution.py                # Section 4.4: cross-record attribution
+python gauge/score_framing.py                    # Section 4.6: framing
 python gauge/score_stripped.py                   # Section 4.6: stripped rung
 python gauge/score_cot_budget.py                 # Section 4.6: reasoning budget, Llama-3.1-8B
-python gauge/score_cot_budget.py --single --hi results/v41cot8k_llama70b.json --tag llama70b --out results/v41_cot_70b_scored.json   # Section 4.6: Llama-3.1-70B
+python gauge/score_cot_budget.py --single --hi results/cot-8k_llama70b.json --tag llama70b --out results/scored_cot_70b.json   # Section 4.6: Llama-3.1-70B
 python gauge/score_tool.py                       # Section 4.6: value against program
 python tools/make_points_pool.py                 # records used as held-out probes
 python gauge/program_equivalence.py              # Section 4.7, Table 4: extensional equivalence
 python gauge/score_dissociation.py               # Discussion, Table 5: rank people, count people
 python gauge/score_frontier.py                   # Section 4.1, Figure 3: GPT-4o against the five models
-python gauge/verify_v41_claims.py                # Section 4.3: required state, answer position, absence
+python gauge/verify_claims.py                    # Section 4.3: required state, answer position, absence
 python gauge/multiplicity.py                     # Section 3.5: cells scanned and Benjamini-Hochberg correction
 python tools/make_absence_artifact.py            # input of Figure 6
 python tools/pair_counts.py                      # Section 4.3 and abstract: 105 pairs, 47 / 46 / 12, 89%
@@ -254,7 +257,7 @@ python gauge/make_ladder_figure.py               # Figure 4
 
 The LaTeX tables go to `outputs/tex/tabs/` and the figures to `outputs/tex/figs/`.
 `gauge/tasks_*.py` hold the reference computations behind every answer key (Appendix C). Run
-`python gauge/tasks_v41.py` (and `tasks_control.py`, `tasks_ladder.py`, `tasks_tool.py`) to execute
+`python gauge/tasks_main.py` (and `tasks_control.py`, `tasks_ladder.py`, `tasks_tool.py`) to execute
 their self-tests.
 
 ## Models
@@ -273,11 +276,8 @@ GPT-4o (`gpt-4o`) is called through the OpenAI API with temperature 0.
 
 ## Checks
 
-- `tools/test_generator_reproduces.sh PARQUET WORKDIR` rebuilds the question set and compares md5
-  values with the question set that was scored.
-- `tools/check_ast_equivalence.py --orig-root DIR` compares each file in `gauge/` with the research
-  code it was cleaned from. Docstrings, comments, path defaults and a few message strings changed
-  (the checker lists each one); the code did not. Add `--selftest` to check the checker.
+`tools/test_generator_reproduces.sh PARQUET WORKDIR` rebuilds the question set and compares md5
+values with the question set that was scored.
 
 ## Licence
 

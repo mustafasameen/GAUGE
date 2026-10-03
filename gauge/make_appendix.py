@@ -2,8 +2,8 @@
 """Generate the appendix tables that describe the question set.
 
 The question set is not distributed with the paper, so the appendix has to make it auditable:
-anyone who rebuilds the items file with tally_v41.py can recompute every number here and check it
-against the printed table. Nothing in this script is typed by hand.
+anyone who rebuilds the items file with generate_questions.py can recompute every number here and
+check it against the printed table. Nothing in this script is typed by hand.
 
 Writes, under outputs/tex/tabs/:
   tab_fingerprint.tex    summary statistics of the question set: questions, descriptor families,
@@ -13,12 +13,12 @@ Writes, under outputs/tex/tabs/:
 and results/appendix_fingerprint.json, a side-car with the md5 of the items file, the sha256 of the
 generator and the corpus counts.
 
-Input: results/tally_v41.jsonl, results/tally_v41_geomfix.jsonl (the corrected-header coordinate
-draw) and gauge/tally_v41.py, whose argparse defaults are read for the per-setting target and the
-seed.
+Input: results/questions.jsonl, results/questions_corrected_header.jsonl (the corrected-header
+coordinate draw) and gauge/generate_questions.py, whose argparse defaults are read for the
+per-setting target and the seed.
 
 Usage:
-  python gauge/make_appendix.py [--items ...] [--geomfix ...] [--generator ...] [--outdir ...]
+  python gauge/make_appendix.py [--items ...] [--corrected-header ...] [--generator ...] [--outdir ...]
 """
 import argparse
 import collections
@@ -87,12 +87,13 @@ def tex_escape(s):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--items", default=os.path.join(ROOT, "results/tally_v41.jsonl"))
+    ap.add_argument("--items", default=os.path.join(ROOT, "results/questions.jsonl"))
     # The coordinate families were regenerated with the corrected column header
-    # (tally_v41.py --only-coord). The reported numbers come from --items; --geomfix is the corrected
-    # draw used by the robustness rerun. The appendix describes both.
-    ap.add_argument("--geomfix", default=os.path.join(ROOT, "results/tally_v41_geomfix.jsonl"))
-    ap.add_argument("--generator", default=os.path.join(ROOT, "gauge/tally_v41.py"))
+    # (generate_questions.py --only-coord). The reported numbers come from --items;
+    # --corrected-header is the corrected draw used by the robustness rerun. The appendix describes
+    # both.
+    ap.add_argument("--corrected-header", default=os.path.join(ROOT, "results/questions_corrected_header.jsonl"))
+    ap.add_argument("--generator", default=os.path.join(ROOT, "gauge/generate_questions.py"))
     ap.add_argument("--outdir", default=os.path.join(ROOT, "outputs/tex/tabs"))
     a = ap.parse_args()
 
@@ -107,9 +108,9 @@ def main():
     print(f"generator : {a.generator}")
 
     items_md5 = md5_of(a.items)
-    geomfix_md5 = md5_of(a.geomfix) if os.path.exists(a.geomfix) else None
-    if geomfix_md5:
-        print(f"geomfix   : {a.geomfix}\n            md5 {geomfix_md5}")
+    header_md5 = md5_of(a.corrected_header) if os.path.exists(a.corrected_header) else None
+    if header_md5:
+        print(f"header    : {a.corrected_header}\n            md5 {header_md5}")
     else:
         print("WARNING: corrected coordinate draw not found; the appendix will describe a "
               "single-artifact history that is not what happened.")

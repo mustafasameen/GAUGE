@@ -30,9 +30,9 @@ Input: an items file and the result JSONs of the runs to screen.
 Output: a JSON file with one verdict per tier/family/span cell, and a per-family roll-up on screen.
 
 Usage:
-  python gauge/screen_degeneracy.py --items results/tally_v41.jsonl
-      --runs results/v41pilot_gemma3_12b.json results/v41core_*.json
-      --out results/degeneracy_screen_v41.json
+  python gauge/screen_degeneracy.py --items results/questions.jsonl
+      --runs results/primary_gemma3_12b.json results/main_*.json
+      --out results/degeneracy_screen.json
 """
 import argparse
 import collections
@@ -43,24 +43,24 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from eval_factqa import norm
+from eval_model import norm
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-CORE = ["phi35mini", "mistral7b", "llama8b", "gemma3_12b", "llama70b"]
+MODELS = ["phi35mini", "mistral7b", "llama8b", "gemma3_12b", "llama70b"]
 DEGEN_MARGIN = 0.20   # top_share may exceed floor by at most this before the cell reads as constant
 HEAD_MIN = 0.05       # best-model normalized gain must clear this for a rate to be fittable
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--items", default="results/tally_v4.jsonl")
+    ap.add_argument("--items", default="results/coord_questions.jsonl")
     ap.add_argument("--runs", nargs="*", default=None,
-                    help="result jsons; default = the five v4 core runs")
+                    help="result jsons; default = the five main runs")
     ap.add_argument("--out", default="results/degeneracy_screen.json")
     a = ap.parse_args()
 
     items = [json.loads(l) for l in open(os.path.join(ROOT, a.items))]
-    runs = a.runs or [f"results/v4core_{m}.json" for m in CORE]
+    runs = a.runs or [f"results/main_{m}.json" for m in MODELS]
     preds = {}
     for r in runs:
         p = os.path.join(ROOT, r)

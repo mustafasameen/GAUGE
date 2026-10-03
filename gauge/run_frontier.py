@@ -3,10 +3,10 @@
 
 The prompt is `prompt_full` from the items file, verbatim. It is not rewritten for the API, so the
 hosted model answers the same question as the open-weight models. Generation is capped at 24 tokens
-at temperature 0, as in the open-weight runs. Items are read from results/tally_v41.jsonl at the
+at temperature 0, as in the open-weight runs. Items are read from results/questions.jsonl at the
 positions listed in an index file (--subset), so the item set is identical to the one the
 open-weight runs answered. Scoring happens in score_frontier.py, which imports `norm` from
-eval_factqa, so a prediction becomes an answer by the same rule for every model.
+eval_model, so a prediction becomes an answer by the same rule for every model.
 
 `--peek N` runs N items and prints exactly what came back, without scoring: look at raw output
 before trusting any parsed value. The script resumes from --out, so a generation that was paid for
@@ -14,15 +14,15 @@ is never requested twice, and it checkpoints every 25 items.
 
 Requires the openai package and an API key in OPENAI_API_KEY (or in a file named by --key-file).
 
-Input: results/tally_v41.jsonl and an index file. The index file is JSON with the key "indices",
+Input: results/questions.jsonl and an index file. The index file is JSON with the key "indices",
 a list of positions in the items file. The paper's arm used 30 questions per setting over 32
 settings (960 in total).
 Output: the JSON file given by --out, with the raw generations keyed by item position.
 
 Usage:
   export OPENAI_API_KEY=...
-  python gauge/run_frontier_probe.py --peek 2 --subset results/subset_allspans.json
-  python gauge/run_frontier_probe.py --model gpt-4o --subset results/subset_allspans.json
+  python gauge/run_frontier.py --peek 2 --subset results/subset_allspans.json
+  python gauge/run_frontier.py --model gpt-4o --subset results/subset_allspans.json
       --out results/frontier_gpt4o.json
 """
 from __future__ import annotations
@@ -30,10 +30,10 @@ import argparse, json, os, sys, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "gauge"))
-from eval_factqa import norm                      # identical parsing to the GPU runs, by import
+from eval_model import norm                      # identical parsing to the GPU runs, by import
 
 SUBSET = os.path.join(ROOT, "results", "subset_stratified.json")
-ITEMS = os.path.join(ROOT, "results", "tally_v41.jsonl")
+ITEMS = os.path.join(ROOT, "results", "questions.jsonl")
 # the instrument's own instruction; the GPU runs cap generation at 24 tokens
 MAX_TOKENS = 24
 

@@ -17,9 +17,9 @@ read. The sampling arm's subset is drawn without the sorting, by tools/draw_samp
 Input: an items file (JSON lines). Output: the subset, in the same format, and a summary on screen.
 
 Usage:
-  python gauge/make_subset.py --items results/tally_v41.jsonl --per-cell 30 --seed 0
+  python gauge/make_subset.py --items results/questions.jsonl --per-cell 30 --seed 0
       --families gyration_km,max_distance,total_distance,longest_jump,day_distinct,retrieve_p50
-      --out results/tally_v41_frontier.jsonl
+      --out results/questions_frontier.jsonl
 """
 import argparse
 import collections

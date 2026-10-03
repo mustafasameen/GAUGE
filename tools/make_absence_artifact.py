@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rebuild results/v41_absence_all_models.json, the input of the correct-abstention figure (Figure 6).
+"""Rebuild results/absence_all_models.json, the input of the correct-abstention figure (Figure 6).
 
 The retrieval probe (family retrieve_probe) asks for the place at a given position of the record.
 Half of its questions cannot be answered from the record, and their gold answer is "none". For each
@@ -12,19 +12,19 @@ model and record length the file holds:
   answerable        accuracy on the answerable questions
   n_unanswerable, n_answerable, n_clusters (the number of distinct people among the unanswerable)
 
-A generation counts as an abstention when the shared parser (eval_factqa.norm) reads it as "none",
+A generation counts as an abstention when the shared parser (eval_model.norm) reads it as "none",
 or when it is the bare word "no".
 
 make_figures.py reads this file. Point estimates are the ones the paper's figure was drawn from.
 The interval ends come from the bootstrap of family_cis.py and may differ from the paper's file in
 the third decimal.
 
-Input: results/tally_v41.jsonl and the five core runs (results/v41core_<tag>.json and
-results/v41pilot_gemma3_12b.json).
-Output: results/v41_absence_all_models.json (or the file given by --out).
+Input: results/questions.jsonl and the five main runs (results/main_<tag>.json and
+results/primary_gemma3_12b.json).
+Output: results/absence_all_models.json (or the file given by --out).
 
 Usage:
-  python tools/make_absence_artifact.py [--out results/v41_absence_all_models.json]
+  python tools/make_absence_artifact.py [--out results/absence_all_models.json]
 """
 from __future__ import annotations
 
@@ -37,15 +37,15 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "gauge"))
-from eval_factqa import norm  # noqa: E402
+from eval_model import norm  # noqa: E402
 
 NBOOT, MINCL = 2000, 5
 FAMILY = "retrieve_probe"
-RUNS = {"Phi-3.5-mini": "results/v41core_phi35mini.json",
-        "Mistral-7B": "results/v41core_mistral7b.json",
-        "Llama-3.1-8B": "results/v41core_llama8b.json",
-        "Gemma-3-12B": "results/v41pilot_gemma3_12b.json",
-        "Llama-3.1-70B": "results/v41core_llama70b.json"}
+RUNS = {"Phi-3.5-mini": "results/main_phi35mini.json",
+        "Mistral-7B": "results/main_mistral7b.json",
+        "Llama-3.1-8B": "results/main_llama8b.json",
+        "Gemma-3-12B": "results/primary_gemma3_12b.json",
+        "Llama-3.1-70B": "results/main_llama70b.json"}
 
 
 def boot(uids, values, seed=0):
@@ -65,8 +65,8 @@ def boot(uids, values, seed=0):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--items", default="results/tally_v41.jsonl")
-    ap.add_argument("--out", default="results/v41_absence_all_models.json")
+    ap.add_argument("--items", default="results/questions.jsonl")
+    ap.add_argument("--out", default="results/absence_all_models.json")
     a = ap.parse_args()
     items = [json.loads(line) for line in open(a.items)]
     gold = [it["a"].lower() for it in items]

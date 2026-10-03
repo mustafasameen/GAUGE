@@ -23,13 +23,13 @@ per-setting best constant, never raw accuracy. Berglund et al. (2023, arXiv 2309
 10) make the related point that a control whose answer is easier to score measures the scorer, not
 the model.
 
-Usage: imported by tally_control.py. Run `python gauge/tasks_control.py` for the self-tests.
+Usage: imported by generate_control.py. Run `python gauge/tasks_control.py` for the self-tests.
 """
 from __future__ import annotations
 
 import numpy as np
 
-KM = 0.5   # one grid unit = 500 m, identical to tier F and tasks_v41
+KM = 0.5   # one grid unit = 500 m, identical to tier F and tasks_main
 
 
 def C_pair_distance(s, rng, span, P):

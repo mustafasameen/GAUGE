@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 """Draw a per-cell subsample of the geometric items for the chain-of-thought budget arm.
 
-results/tally_v41_geomfix.jsonl holds 6,000 geometric items (300 per setting x 20 settings). Under
-`--style cot` with a multi-thousand-token budget that is too much for one run, so the arm uses a
-subsample. The draw is seeded and balanced per setting, and the script prints the md5 of the
-result, so the item file can be reproduced from the command line alone.
+results/questions_corrected_header.jsonl holds 6,000 geometric items (300 per setting x 20
+settings). Under `--style cot` with a multi-thousand-token budget that is too much for one run, so
+the arm uses a subsample. The draw is seeded and balanced per setting, and the script prints the md5
+of the result, so the item file can be reproduced from the command line alone.
 
 Items are copied through byte for byte: same `prompt_full`, same gold, same family, span and uid.
 The script only selects, and it asserts this on every drawn item, because the arm's comparability
 with the terse runs rests on the prompts being the identical objects. Each output item records its
 source row as `cot_src_idx`.
 
-Input: results/tally_v41_geomfix.jsonl (from tally_v41.py --only-coord).
+Input: results/questions_corrected_header.jsonl (from generate_questions.py --only-coord).
 Output: the file given by --out.
 
 Usage:
-  python gauge/make_cot_items.py --per-cell 20 --out results/tally_v41cot.jsonl
-  python gauge/make_cot_items.py --per-cell 2 --out results/tally_v41cot_smoke.jsonl
+  python gauge/make_cot_items.py --per-cell 20 --out results/questions_cot.jsonl
+  python gauge/make_cot_items.py --per-cell 2 --out results/questions_cot_smoke.jsonl
   python gauge/make_cot_items.py --selftest
 """
 from __future__ import annotations
 import argparse, collections, hashlib, json, os, random, sys
 
-SRC = "results/tally_v41_geomfix.jsonl"
+SRC = "results/questions_corrected_header.jsonl"
 GEOM = ["gyration_km", "max_distance", "total_distance", "longest_jump"]
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 
@@ -119,7 +119,7 @@ def main():
     ap.add_argument("--src", default=os.path.join(ROOT, SRC))
     ap.add_argument("--per-cell", type=int, default=2)
     ap.add_argument("--seed", type=int, default=41)
-    ap.add_argument("--out", default=os.path.join(ROOT, "results/tally_v41cot_smoke.jsonl"))
+    ap.add_argument("--out", default=os.path.join(ROOT, "results/questions_cot_smoke.jsonl"))
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
     if a.selftest:

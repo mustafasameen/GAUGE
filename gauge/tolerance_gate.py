@@ -16,8 +16,8 @@ match, +/-1 absolute, and +/-5%, +/-10% and +/-25% relative.
 
 It also reports whether the cross-model rank spread survives tolerance scoring.
 
-Input: results/tally_v41.jsonl and the five core runs.
-Output: results/v41_tolerance_gate.json.
+Input: results/questions.jsonl and the five main runs.
+Output: results/tolerance_gate.json.
 
 Usage:
   python gauge/tolerance_gate.py
@@ -30,14 +30,14 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from eval_factqa import norm
+from eval_model import norm
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-RUNS = {"phi35mini": "results/v41core_phi35mini.json",
-        "mistral7b": "results/v41core_mistral7b.json",
-        "llama8b": "results/v41core_llama8b.json",
-        "gemma3_12b": "results/v41pilot_gemma3_12b.json",
-        "llama70b": "results/v41core_llama70b.json"}
+RUNS = {"phi35mini": "results/main_phi35mini.json",
+        "mistral7b": "results/main_mistral7b.json",
+        "llama8b": "results/main_llama8b.json",
+        "gemma3_12b": "results/primary_gemma3_12b.json",
+        "llama70b": "results/main_llama70b.json"}
 GEOM = ["gyration_km", "max_distance", "total_distance", "longest_jump"]
 COUNT = ["day_distinct", "core_set", "longest_stay"]
 # (label, predicate on (pred, gold))
@@ -90,7 +90,7 @@ def best_constant(gv, pred_fn):
 
 
 def main():
-    items = [json.loads(l) for l in open(os.path.join(ROOT, "results/tally_v41.jsonl"))]
+    items = [json.loads(l) for l in open(os.path.join(ROOT, "results/questions.jsonl"))]
     gold = [it["a"].lower() for it in items]
     preds = {}
     for t, p in RUNS.items():
@@ -164,7 +164,7 @@ def main():
               f"(range {max(rho.values())-min(rho.values()):.3f})   "
               f"rel25 gain spread {min(r25.values()):+.3f}..{max(r25.values()):+.3f}")
 
-    dst = os.path.join(ROOT, "results/v41_tolerance_gate.json")
+    dst = os.path.join(ROOT, "results/tolerance_gate.json")
     json.dump(out, open(dst, "w"), indent=1, default=str)
     print(f"\nwrote {dst}")
 

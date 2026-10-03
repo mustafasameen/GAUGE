@@ -17,16 +17,16 @@ Reported per K, on the K ladder at a fixed total record length of about 440 rows
     being read.
   * The parse rate: coverage is reported and never silently folded into accuracy.
 
-Input: results/tally_whichK.jsonl and results/v41whichK_<tag>.json.
-Output: results/v41_whichK_scored.json.
+Input: results/questions_attribution.jsonl and results/attribution_<tag>.json.
+Output: results/scored_attribution.json.
 
 Usage:
-  python gauge/score_whichK.py
+  python gauge/score_attribution.py
 """
 import collections, glob, json, os, sys
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from eval_factqa import norm
+from eval_model import norm
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 NBOOT = 2000
@@ -44,8 +44,8 @@ def boot(correct, n=NBOOT, seed=0):
 
 
 def main():
-    ip = os.path.join(ROOT, "results/tally_whichK.jsonl")
-    runs = sorted(glob.glob(os.path.join(ROOT, "results/v41whichK_*.json")))
+    ip = os.path.join(ROOT, "results/questions_attribution.jsonl")
+    runs = sorted(glob.glob(os.path.join(ROOT, "results/attribution_*.json")))
     if not os.path.exists(ip) or not runs:
         sys.exit("which_person: items or runs not on disk yet")
     items = [json.loads(l) for l in open(ip)]
@@ -56,7 +56,7 @@ def main():
 
     out, cube = {}, {}
     for rp in runs:
-        model = os.path.basename(rp).replace("v41whichK_", "").replace(".json", "")
+        model = os.path.basename(rp).replace("attribution_", "").replace(".json", "")
         blob = json.load(open(rp))
         for cond in ("full", "blind"):
             raw = blob["raw"].get(cond)
@@ -126,7 +126,7 @@ def main():
             print(f"    {m:<12}" + " -> ".join(f"{x:+.3f}" for x in v)
                   + f"   {lab}{' (monotone)' if mono and lab == 'RISES' else ''}")
 
-    dst = os.path.join(ROOT, "results/v41_whichK_scored.json")
+    dst = os.path.join(ROOT, "results/scored_attribution.json")
     json.dump(out, open(dst, "w"), indent=1, default=str)
     print(f"\nwrote {dst}  ({len(out)} cells)")
 

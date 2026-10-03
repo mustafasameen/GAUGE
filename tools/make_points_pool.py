@@ -3,13 +3,13 @@
 
 program_equivalence.py checks every model-written expression against 50 real records that the
 expression was not written for. The pool is the list of point sets of the program-arm items: the
-points of every `tool_gyration` item of results/tally_tool.jsonl, in file order, as a JSON list of
-{"pts": [[x, y], ...]}. (The four geometric families share the same 300 records, so one family is
+points of every `tool_gyration` item of results/questions_tool.jsonl, in file order, as a JSON list
+of {"pts": [[x, y], ...]}. (The four geometric families share the same 300 records, so one family is
 enough.) With this pool the script gives the same counts of correct and equivalent programs as the
 pool behind the paper's table.
 
 Usage:
-  python tools/make_points_pool.py [--items results/tally_tool.jsonl] [--out results/_pts_pool.json]
+  python tools/make_points_pool.py [--items results/questions_tool.jsonl] [--out results/_pts_pool.json]
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ import sys
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--items", default="results/tally_tool.jsonl", help="program-arm items file")
+    ap.add_argument("--items", default="results/questions_tool.jsonl", help="program-arm items file")
     ap.add_argument("--out", default="results/_pts_pool.json", help="where to write the pool")
     a = ap.parse_args()
     pool = []

@@ -7,7 +7,7 @@ were found. It exits with the list of missing ones unless partial scoring is all
 (the --allow-partial flag or ALLOW_PARTIAL=1), in which case the shortfall is printed beside the
 result.
 
-Used by score_compare.py, score_control_ladder.py, score_control_tolerance.py, score_mitigation.py
+Used by score_compare.py, score_control_ladder.py, score_control_tolerance.py, score_sampling.py
 and score_templates.py.
 """
 import os, sys

@@ -16,9 +16,9 @@ Output: a results JSON with the raw generations (raw[condition]), per-item gener
 per-family summary. A checkpoint per condition is written beside it as {out}.{cond}.ckpt.
 
 Usage:
-  python gauge/eval_factqa.py --items results/tally_v41.jsonl --model google/gemma-3-12b-it
+  python gauge/eval_model.py --items results/questions.jsonl --model google/gemma-3-12b-it
       --style terse --bs 64 --tok-budget 40000 --max-new 24 --max-len 32768
-      --conds full,blind --out results/v41pilot_gemma3_12b.json
+      --conds full,blind --out results/primary_gemma3_12b.json
 """
 from __future__ import annotations
 import argparse, collections, json, os, re, time
@@ -120,8 +120,8 @@ def norm(text, family, atype=None):
     # letter, which must not be a lone "a" before a noun.
     if atype == "letter":
         # The alphabet is A/B/C/E/F/G/H/J. D, T and P are excluded at generation because they collide
-        # with the d/t/p field prefixes in the rendered record (see tally_whichK.py). The character classes
-        # below exclude d, t and p for the same reason.
+        # with the d/t/p field prefixes in the rendered record (see generate_attribution.py). The
+        # character classes below exclude d, t and p for the same reason.
         if re.search(r"\bnone\b", t) or re.search(r"\bno(?:body|t any| one)\b", t):
             return "none"
         if re.fullmatch(r"[abcefghj]", t):
@@ -207,7 +207,7 @@ def norm(text, family, atype=None):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--items", default="results/factqa_v1.jsonl")
+    ap.add_argument("--items", default="results/questions.jsonl")
     ap.add_argument("--model", default="meta-llama/Llama-3.1-8B-Instruct")
     ap.add_argument("--init-from", default=None,
                     help="LoRA adapter directory to load on top of --model (requires peft).")
@@ -216,8 +216,9 @@ def main():
     ap.add_argument("--style", choices=["terse", "cot", "procedure", "fewshot"],
                     default="terse")
     ap.add_argument("--max-new", type=int, default=192)
-    # Conditions to run, comma-separated: full, blind, and nomobility or stripped for the framing
-    # arms. `--conds full` halves the cost when the blind control is not needed.
+    # Conditions to run, comma-separated: full, blind, and the extra prompt conditions that the
+    # framing item files carry (make_framing.py, make_stripped.py). `--conds full` halves the cost
+    # when the blind control is not needed.
     ap.add_argument("--conds", default="full,blind")
     # Optional chat-template flag for models that have a thinking mode (for example Qwen3), which is
     # toggled by one boolean in the template. `default` passes no flag.
@@ -271,7 +272,7 @@ def main():
     ap.add_argument("--n-samples", type=int, default=1)
     ap.add_argument("--temperature", type=float, default=0.7)
     ap.add_argument("--top-p", type=float, default=0.95)
-    ap.add_argument("--out", default="results/factqa_gate1.json")
+    ap.add_argument("--out", default="results/run.json")
     a = ap.parse_args()
     CONDS = tuple(c.strip() for c in a.conds.split(",") if c.strip())
     CHAT_KW = {} if a.thinking == "default" else {"enable_thinking": a.thinking == "on"}

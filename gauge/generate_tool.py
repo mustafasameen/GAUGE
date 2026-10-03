@@ -12,25 +12,25 @@ identical points, and that a correct reference expression, run through the sandb
 tasks_tool.py, recovers the gold on every item (a ceiling of 1.000). Any shortfall therefore
 belongs to the model and not to the harness.
 
-Input: data/yjmob/yjmob_v4.parquet (from export_v4.py).
-Output: results/tally_tool.jsonl (2,400 items: 300 records x 4 families x 2 arms).
+Input: data/yjmob/yjmob_export.parquet (from export_yjmob.py).
+Output: results/questions_tool.jsonl (2,400 items: 300 records x 4 families x 2 arms).
 
 Usage:
-  python gauge/tally_tool.py --data data/yjmob/yjmob_v4.parquet --out results/tally_tool.jsonl
+  python gauge/generate_tool.py --data data/yjmob/yjmob_export.parquet --out results/questions_tool.jsonl
 """
 import argparse, collections, hashlib, json, os, sys
 import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import tasks_tool as T
-from tally_v4 import MAX_PROMPT_CHARS, rigid
-from tally_v41 import SLOTS_PER_DAY, SPLIT_DAY
+from coord_records import MAX_PROMPT_CHARS, rigid
+from generate_questions import SLOTS_PER_DAY, SPLIT_DAY
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--data", default="data/yjmob/yjmob_v4.parquet")
+ap.add_argument("--data", default="data/yjmob/yjmob_export.parquet")
 ap.add_argument("--spans", default="32,64,128")
 ap.add_argument("--per-cell", type=int, default=100)
 ap.add_argument("--seed", type=int, default=7)
-ap.add_argument("--out", default="results/tally_tool.jsonl")
+ap.add_argument("--out", default="results/questions_tool.jsonl")
 a = ap.parse_args()
 
 rng = np.random.default_rng(a.seed)

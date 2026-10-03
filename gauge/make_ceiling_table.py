@@ -10,8 +10,8 @@ the worst full-condition ceiling rate, the full-condition median lengths, and th
 rate for Mistral-7B. With --emit it also writes outputs/tex/tabs/tab_ceiling.tex; the table itself
 is not typeset in the paper.
 
-Input: results/v41core_<tag>.json.{full,blind}.ckpt and results/v41pilot_gemma3_12b.json.{full,blind}.ckpt
-(written by eval_factqa.py).
+Input: results/main_<tag>.json.{full,blind}.ckpt and
+results/primary_gemma3_12b.json.{full,blind}.ckpt (written by eval_model.py).
 
 Usage:
   python gauge/make_ceiling_table.py [--check] [--emit]
@@ -22,14 +22,14 @@ import argparse, json, os, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "outputs", "tex", "tabs", "tab_ceiling.tex")
 
-# Display name -> run stem. Gemma's core run carries the v41pilot prefix; every other model carries
-# v41core. Naming them explicitly keeps a rename from silently dropping a model from the table.
+# Display name -> run stem. Gemma's main run carries the primary prefix; every other model carries
+# main. Naming them explicitly keeps a rename from silently dropping a model from the table.
 RUNS = [
-    ("Phi-3.5-mini",   "v41core_phi35mini"),
-    ("Mistral-7B",     "v41core_mistral7b"),
-    ("Llama-3.1-8B",   "v41core_llama8b"),
-    ("Gemma-3-12B",    "v41pilot_gemma3_12b"),
-    ("Llama-3.1-70B",  "v41core_llama70b"),
+    ("Phi-3.5-mini",   "main_phi35mini"),
+    ("Mistral-7B",     "main_mistral7b"),
+    ("Llama-3.1-8B",   "main_llama8b"),
+    ("Gemma-3-12B",    "primary_gemma3_12b"),
+    ("Llama-3.1-70B",  "main_llama70b"),
 ]
 
 

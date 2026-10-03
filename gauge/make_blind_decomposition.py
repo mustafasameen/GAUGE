@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Regenerate results/v41_blind_decomposition.json with its provenance (the Gemma-3-12B blind control).
+"""Regenerate results/blind_decomposition.json with its provenance (the Gemma-3-12B blind control).
 
 For each family the script computes the best-constant baseline ("floor"), blind accuracy and full
-accuracy for the Gemma-3-12B core run, using the shared parser (eval_factqa.norm). It writes them
+accuracy for the Gemma-3-12B main run, using the shared parser (eval_model.norm). It writes them
 together with the md5 and modification time of the run and items files. The recomputation is
 compared with an existing output file before anything is overwritten, so the script adds
 provenance and never revises a result. The Gemma run is used because its blind arm reaches the
@@ -12,8 +12,8 @@ blind accuracy downward (Mistral-7B's blind arm reaches the ceiling on 23.5%).
 It asserts that there are 21 families, that blind accuracy is exactly zero for 11 of them, and
 that every family is at or below its baseline.
 
-Input: results/tally_v41.jsonl and results/v41pilot_gemma3_12b.json.
-Output: results/v41_blind_decomposition.json.
+Input: results/questions.jsonl and results/primary_gemma3_12b.json.
+Output: results/blind_decomposition.json.
 
 Usage:
   python gauge/make_blind_decomposition.py [--check]
@@ -23,14 +23,14 @@ from __future__ import annotations
 import argparse, collections, hashlib, json, os, sys, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from eval_factqa import norm            # identical parsing to the GPU run, by import
+from eval_model import norm            # identical parsing to the GPU run, by import
 
 # Paths resolve against the repository, not the caller's directory.
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ITEMS = os.path.join(_ROOT, "results", "tally_v41.jsonl")
-RUN = os.path.join(_ROOT, "results", "v41pilot_gemma3_12b.json")
+ITEMS = os.path.join(_ROOT, "results", "questions.jsonl")
+RUN = os.path.join(_ROOT, "results", "primary_gemma3_12b.json")
 MODEL = "google/gemma-3-12b-it"
-OUT = os.path.join(_ROOT, "results", "v41_blind_decomposition.json")
+OUT = os.path.join(_ROOT, "results", "blind_decomposition.json")
 
 
 def stamp(p):
@@ -97,7 +97,7 @@ def main():
     doc["_provenance"] = dict(
         model=MODEL, run=stamp(RUN), items=stamp(ITEMS),
         generated_by="gauge/make_blind_decomposition.py",
-        note="Computed from the Gemma-3-12B core run. "
+        note="Computed from the Gemma-3-12B main run. "
              "Its blind arm is "
              "at-cap 0.0%. Mistral-7B's blind arm is at-cap 23.5% and is NOT the source of this "
              "claim.")

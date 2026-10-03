@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Question families for the v4.1 benchmark: four geometric families and the place families.
+"""Question families of the benchmark: four geometric families and the place families.
 
 The coordinate families (radius of gyration, maximum displacement, total distance, longest jump) and
 the place families (recency, longest stay, transition, core set, time mode, distinct places on a day,
 windowed distinct count, retrieval at a position, the retrieval probe and a two-hop composition)
 follow scikit-mobility's individual measures (Pappalardo et al.), the field's reference list of what
 is computed about one person. Each family records the measure it covers (`skmob`, or NEW for a
-construction made here) and a `load` label: 0 locate, 1 extremum or discriminate, 2 tally one
+construction made here) and a `load` label: 0 locate, 1 extremum or discriminate, 2 count one
 target, 3 dedupe the whole record, 4 combine two sets, 5 exact arithmetic over all coordinates.
 
 Continuous quantities are asked as integers in natural units with wide support, never as bands. A
@@ -17,7 +17,7 @@ Gold answers are computed from the transformed, rounded coordinates that the mod
 prompt and the answer agree by construction. The self-test at the bottom recomputes every gold by an
 independent brute-force route on 300 random records.
 
-Usage: imported by tally_v41.py. Run `python gauge/tasks_v41.py` for the self-test.
+Usage: imported by generate_questions.py. Run `python gauge/tasks_main.py` for the self-test.
 """
 from __future__ import annotations
 
@@ -25,14 +25,14 @@ import collections
 
 import numpy as np
 
-KM = 0.5   # one grid unit = 500 m, matching v4's tier F
+KM = 0.5   # one grid unit = 500 m, as in the coordinate families of coord_records.py
 
 
 # ---------------------------------------------------------------- coordinate families (load 1,5)
 def F_rg_numeric(s, rng, span, P):
     """Radius of gyration in whole kilometres. skmob: radius_of_gyration. load 5.
-    The earlier binned form (five bands) let a model reach the baseline with one constant letter, so
-    this family asks for an integer in natural units instead.
+    The binned form (F_rg in coord_records.py, five bands) lets a model reach the baseline with one
+    constant letter, so this family asks for an integer in natural units instead.
     """
     rg = float(np.sqrt(((P - P.mean(0)) ** 2).sum(1).mean()) * KM)
     if rg < 1.0:
@@ -133,7 +133,7 @@ def H_longest_stay(s, rng, span, R, days, tods):
 
 
 def H_transition(s, rng, span, R, days, tods):
-    """skmob: individual_mobility_network, reduced to the modal out-edge. load 3 -- tally the
+    """skmob: individual_mobility_network, reduced to the modal out-edge. load 3 -- count the
     successors of one place over the whole record."""
     succ = collections.defaultdict(collections.Counter)
     for i in range(len(R) - 1):
@@ -157,7 +157,7 @@ def H_transition(s, rng, span, R, days, tods):
 
 
 def H_coreset(s, rng, span, R, days, tods):
-    """Wide-answer proxy for skmob: uncorrelated_entropy. load 3-4.
+    """Wide-answer stand-in for skmob: uncorrelated_entropy. load 3-4.
     Entropy is continuous and would need bands. This asks for an integer with wide support that
     captures the same concentration construct: the size of the smallest set of places that covers
     half of the visits.
@@ -354,9 +354,9 @@ def H_two_hop(s, rng, span, R, days, tods):
 COORD_TASKS = [F_rg_numeric, F_maxdist, F_totaldist, F_longest_jump]
 PLACE_TASKS = [H_recency, H_longest_stay, H_transition, H_coreset, H_time_mode, H_day_distinct,
                H_absent, H_present, H_two_hop]
-MIN_OBS_41 = {"gyration_km": 32, "max_distance": 32, "total_distance": 32, "longest_jump": 32,
-              "recency": 8, "longest_stay": 8, "transition": 16, "core_set": 16,
-              "time_mode": 16, "day_distinct": 8, "retrieve_probe": 8, "two_hop": 16}
+MIN_OBS = {"gyration_km": 32, "max_distance": 32, "total_distance": 32, "longest_jump": 32,
+           "recency": 8, "longest_stay": 8, "transition": 16, "core_set": 16,
+           "time_mode": 16, "day_distinct": 8, "retrieve_probe": 8, "two_hop": 16}
 
 
 # ------------------------------------------------------------------------------- SELF-TEST

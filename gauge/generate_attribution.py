@@ -24,19 +24,19 @@ Checks, asserted or printed after the items are written:
 
 Labels exclude D, T and P, which would collide with the d/t/p field prefixes of the rendered rows.
 
-Input: data/yjmob/yjmob_v4.parquet (from export_v4.py).
-Output: results/tally_whichK.jsonl (1,191 items) and results/which_person_screen.json.
+Input: data/yjmob/yjmob_export.parquet (from export_yjmob.py).
+Output: results/questions_attribution.jsonl (1,191 items) and results/screen_attribution.json.
 
 Usage:
-  python gauge/tally_whichK.py --data data/yjmob/yjmob_v4.parquet --out results/tally_whichK.jsonl
+  python gauge/generate_attribution.py --data data/yjmob/yjmob_export.parquet --out results/questions_attribution.jsonl
 """
 
 import argparse, collections, hashlib, json, os, sys
 import numpy as np, pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from tally_v4 import MAX_PROMPT_CHARS
-from tally_v41 import SLOTS_PER_DAY, SPLIT_DAY
+from coord_records import MAX_PROMPT_CHARS
+from generate_questions import SLOTS_PER_DAY, SPLIT_DAY
 
 # Labels must not collide with the field prefixes. Records render as "d<day> t<slot> p<place>",
 # so labelling people A to H would put person D against the day prefix, T against the timeslot
@@ -49,7 +49,7 @@ FIELD_PREFIXES = set("dtp")
 assert not (set(LET) & {c.upper() for c in FIELD_PREFIXES}), "a label collides with a field prefix"
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--data", default="data/yjmob/yjmob_v4.parquet")
+ap.add_argument("--data", default="data/yjmob/yjmob_export.parquet")
 ap.add_argument("--cells", default="28x2,28x4,28x6,28x8",
                 help="comma-separated <span_days>x<K> cells (days of history x number of people). "
                      "The default keeps the total record length fixed at --total-rows and varies K. "
@@ -58,7 +58,7 @@ ap.add_argument("--per-cell", type=int, default=300)
 ap.add_argument("--pool", type=int, default=6000)
 ap.add_argument("--seed", type=int, default=0)
 ap.add_argument("--total-rows", type=int, default=440)
-ap.add_argument("--out", default="results/tally_whichK.jsonl")
+ap.add_argument("--out", default="results/questions_attribution.jsonl")
 a = ap.parse_args()
 
 rng = np.random.default_rng(a.seed)
@@ -223,5 +223,5 @@ json.dump(dict(n=len(items), cells=[f"{s}x{k}" for s, k in CELLS], cap_rejected=
                        for s, k in CELLS},
                cue_failures=cue_fail, distinct_users=len(uu),
                max_user_share=max(uu.values())/len(items)),
-          open("results/which_person_screen.json", "w"), indent=1)
-print("\nwrote results/which_person_screen.json")
+          open("results/screen_attribution.json", "w"), indent=1)
+print("\nwrote results/screen_attribution.json")

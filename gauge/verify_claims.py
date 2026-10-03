@@ -25,12 +25,12 @@ The detailed C-A to C-D tables are computed on the first run listed in --runs (t
 by default). The per-model spread of the headline quantities, for all runs, is reported in the
 final section.
 
-Input: results/tally_v41.jsonl and the core runs (results/v41pilot_gemma3_12b.json and
-results/v41core_*.json).
-Output: results/v41_claim_verification.json.
+Input: results/questions.jsonl and the main runs (results/primary_gemma3_12b.json and
+results/main_*.json).
+Output: results/claim_verification.json.
 
 Usage:
-  python gauge/verify_v41_claims.py [--items ...] [--runs ...] [--out ...]
+  python gauge/verify_claims.py [--items ...] [--runs ...] [--out ...]
 """
 import argparse
 import collections
@@ -42,14 +42,14 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from eval_factqa import norm
+from eval_model import norm
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 NBOOT = 2000
 
 # Multi-run by default: every run matching --runs is scored separately, and the per-model spread
 # is reported beside the primary run, so that a single model is never silently reported as more.
-DEFAULT_RUNS = "results/v41pilot_gemma3_12b.json results/v41core_*.json"
+DEFAULT_RUNS = "results/primary_gemma3_12b.json results/main_*.json"
 
 
 def _midrank(x):
@@ -111,8 +111,8 @@ def load_runs(patterns, items):
         if p in seen:
             continue
         seen.add(p)
-        tag = os.path.basename(p).replace(".json", "").replace("v41core_", "").replace(
-            "v41pilot_", "")
+        tag = os.path.basename(p).replace(".json", "").replace("main_", "").replace(
+            "primary_", "")
         d = json.load(open(p))
         raw = d["raw"]["full"]
         if len(raw) != len(items):
@@ -126,9 +126,9 @@ def load_runs(patterns, items):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--items", default="results/tally_v41.jsonl")
+    ap.add_argument("--items", default="results/questions.jsonl")
     ap.add_argument("--runs", nargs="*", default=DEFAULT_RUNS.split())
-    ap.add_argument("--out", default="results/v41_claim_verification.json")
+    ap.add_argument("--out", default="results/claim_verification.json")
     a = ap.parse_args()
 
     items = [json.loads(l) for l in open(os.path.join(ROOT, a.items))]

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Turn a subset items file into the index file that the GPT-4o scripts read.
 
-gauge/make_subset.py writes the chosen questions as a JSON-lines items file. gauge/run_frontier_probe.py
+gauge/make_subset.py writes the chosen questions as a JSON-lines items file. gauge/run_frontier.py
 and gauge/score_frontier.py take instead a JSON file {"indices": [...]}, the positions of the chosen
-questions in the full items file (results/tally_v41.jsonl). This script finds each subset question
+questions in the full items file (results/questions.jsonl). This script finds each subset question
 in the full file and writes the sorted positions.
 
 Two ways to find a question (--match):
@@ -14,7 +14,7 @@ Two ways to find a question (--match):
   content  the question whose every field is equal (the exact question that make_subset.py chose).
 
 Usage:
-  python tools/subset_to_indices.py --items results/tally_v41.jsonl --subset results/tally_v41_frontier.jsonl
+  python tools/subset_to_indices.py --items results/questions.jsonl --subset results/questions_frontier.jsonl
       --out results/subset_allspans.json --note "per-cell 30, seed 0, families=6, ALL spans"
 """
 from __future__ import annotations
@@ -29,7 +29,7 @@ def key_of(r):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--items", default="results/tally_v41.jsonl", help="the full items file")
+    ap.add_argument("--items", default="results/questions.jsonl", help="the full items file")
     ap.add_argument("--subset", required=True, help="items file written by gauge/make_subset.py")
     ap.add_argument("--out", required=True, help="index file to write")
     ap.add_argument("--match", choices=["key", "content"], default="key",

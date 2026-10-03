@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check an items file by calling the real consumer, not by re-implementing its checks.
 
-The check imports `eval_factqa` and exercises its real symbols: the same NUMERIC, BUCKET and CATEG
+The check imports `eval_model` and exercises its real symbols: the same NUMERIC, BUCKET and CATEG
 sets and the same `norm()` parser. It asserts on the exact keys the scorer indexes, so if the
 scorer changes, this check changes with it. It verifies that:
   - every item has the keys family, atype, a, q, prompt_full and prompt_blind;
@@ -9,7 +9,7 @@ scorer changes, this check changes with it. It verifies that:
   - every gold answer round-trips through `norm()`;
   - no record contains a day on or after day 60 (no test-period leakage).
 
-Usage:  python gauge/preflight_items.py results/tally_v41.jsonl
+Usage:  python gauge/preflight_items.py results/questions.jsonl
 Exit 0 means the file is safe to spend GPU time on. Any failure prints what is wrong and exits
 non-zero.
 """
@@ -22,7 +22,7 @@ SPLIT_DAY = 60
 
 def main(path):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    import eval_factqa as E                       # the actual consumer
+    import eval_model as E                       # the actual consumer
 
     items = [json.loads(l) for l in open(path)]
     if not items:
@@ -66,4 +66,4 @@ def main(path):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "results/tally_v3.jsonl")
+    main(sys.argv[1] if len(sys.argv) > 1 else "results/place_questions.jsonl")

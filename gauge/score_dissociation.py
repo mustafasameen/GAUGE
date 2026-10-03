@@ -29,8 +29,8 @@ hidden.
 The scorer tests itself first on fixtures with known answers (oracle, permutation, constant, and
 every true value halved).
 
-Input: results/tally_v41.jsonl and the five core runs.
-Output: results/v41_dissociation.json.
+Input: results/questions.jsonl and the five main runs.
+Output: results/dissociation.json.
 
 Usage:
   python gauge/score_dissociation.py [--selftest-only] [--max-unparsed 0.05]
@@ -41,13 +41,13 @@ import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "gauge"))
-from eval_factqa import norm            # identical parsing to the GPU runs, by import
+from eval_model import norm            # identical parsing to the GPU runs, by import
 
-ITEMS = os.path.join(ROOT, "results", "tally_v41.jsonl")
-OUT = os.path.join(ROOT, "results", "v41_dissociation.json")
-RUNS = [("Phi-3.5-mini", "v41core_phi35mini"), ("Mistral-7B", "v41core_mistral7b"),
-        ("Llama-3.1-8B", "v41core_llama8b"), ("Gemma-3-12B", "v41pilot_gemma3_12b"),
-        ("Llama-3.1-70B", "v41core_llama70b")]
+ITEMS = os.path.join(ROOT, "results", "questions.jsonl")
+OUT = os.path.join(ROOT, "results", "dissociation.json")
+RUNS = [("Phi-3.5-mini", "main_phi35mini"), ("Mistral-7B", "main_mistral7b"),
+        ("Llama-3.1-8B", "main_llama8b"), ("Gemma-3-12B", "primary_gemma3_12b"),
+        ("Llama-3.1-70B", "main_llama70b")]
 GEO = {"gyration_km", "longest_jump", "max_distance", "total_distance"}
 BOOT = 1000
 DECILE, THRESH_Q = 0.10, 0.75

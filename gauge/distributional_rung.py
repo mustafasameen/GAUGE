@@ -18,9 +18,9 @@ A model whose divergence sits near the sampler's and whose rho is near 0 reprodu
 distribution without carrying the individual. A model near the constant's has no distribution
 either.
 
-Input: results/tally_v41.jsonl and the core runs (results/v41pilot_gemma3_12b.json and
-results/v41core_*.json).
-Output: results/v41_distributional_rung.json, one entry per model, family and span, with
+Input: results/questions.jsonl and the main runs (results/primary_gemma3_12b.json and
+results/main_*.json).
+Output: results/distributional_rung.json, one entry per model, family and span, with
 jsd_model, jsd_constant, jsd_sampler and rho.
 
 Usage:
@@ -36,7 +36,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from eval_factqa import norm
+from eval_model import norm
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 NBINS = 20
@@ -90,10 +90,10 @@ def spearman(a, b):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--items", default="results/tally_v41.jsonl")
+    ap.add_argument("--items", default="results/questions.jsonl")
     ap.add_argument("--runs", nargs="*",
-                    default=["results/v41pilot_gemma3_12b.json", "results/v41core_*.json"])
-    ap.add_argument("--out", default="results/v41_distributional_rung.json")
+                    default=["results/primary_gemma3_12b.json", "results/main_*.json"])
+    ap.add_argument("--out", default="results/distributional_rung.json")
     a = ap.parse_args()
 
     items = [json.loads(l) for l in open(os.path.join(ROOT, a.items))]
@@ -108,7 +108,7 @@ def main():
 
     for path in paths:
         tag = os.path.basename(path).replace(".json", "").replace(
-            "v41core_", "").replace("v41pilot_", "")
+            "main_", "").replace("primary_", "")
         raw = json.load(open(path))["raw"]["full"]
         if len(raw) != len(items):
             print(f"SKIP {tag}: length mismatch"); continue

@@ -10,14 +10,15 @@ HOW THE RECORD IS MADE (all of it is in this file, nothing is read from data)
   1. ANCHORS: six invented places on a grid of 500 m cells, and PLAN: 32 hand-written
      (day, timeslot, place) rows. Rows with the same place get the same cell, as in real records.
   2. The anchors are passed through the benchmark's own per-question transform, `rigid` from
-     <root>/scripts/tally_v4.py (rotation, reflection and an integer shift, seeded by SEED_RIGID).
+     <root>/gauge/coord_records.py (rotation, reflection and an integer shift, seeded by
+     SEED_RIGID).
   3. The question, the whole-number key and the unrounded value come from the benchmark's own
-     generator function `F_rg_numeric` in <root>/scripts/tasks_v41.py, called on those points.
+     generator function `F_rg_numeric` in <root>/gauge/tasks_main.py, called on those points.
      Nothing is re-implemented. The rows are rendered with the benchmark's own `render_xy`.
 
 WHAT IS PROVED WHEN THE SCRIPT RUNS
   * File access is audited with an audit hook. Under <root>, only the benchmark's module sources
-    (scripts/*.py, plus cached .pyc beside them) and paper/tex/sections/appendix.tex may be opened.
+    (gauge/*.py, plus cached .pyc beside them) and the appendix file (--appendix) may be opened.
     Opening anything under data/, results/, hpc/, analysis/ or any .parquet/.jsonl/.csv/.json file
     stops the script. The list of files opened under <root> is printed.
   * F_rg_numeric returned a record (it returns None below 1 km).
@@ -25,13 +26,14 @@ WHAT IS PROVED WHEN THE SCRIPT RUNS
     unrounded value and the same whole-number key as the original function.
   * The question text produced by F_rg_numeric equals the question the appendix prints.
   * The instruction, header line, closing line and reference program shown on the page are taken
-    from <root>/paper/tex/sections/appendix.tex (Appendix B and C), not typed here.
+    from the paper's appendix.tex (Appendix B and C), not typed here. That file is not part of this
+    repository; --appendix names it (default: <root>/paper/tex/sections/appendix.tex).
   ROOT is read-only: bytecode writing is switched off before the first import.
 
 USAGE
-  python3 -B docs/tools/make_demo.py --root "<path to the benchmark workspace>" --html docs/index.html
-  python3 -B docs/tools/make_demo.py --root "<path>" --html docs/index.html --check   # no write
-  python3 -B docs/tools/make_demo.py --root "<path>" --json demo.json                # inspect only
+  python3 -B docs/tools/make_demo.py --root "<repository root>" --appendix "<appendix.tex>" --html docs/index.html
+  python3 -B docs/tools/make_demo.py --root "<repository root>" --appendix "<appendix.tex>" --html docs/index.html --check
+  python3 -B docs/tools/make_demo.py --root "<repository root>" --appendix "<appendix.tex>" --json demo.json
 """
 from __future__ import annotations
 
@@ -95,12 +97,12 @@ def _hook(event, args):
             pass
 
 
-def audit_report(root: str):
+def audit_report(root: str, appendix: str):
     """Fail if anything outside the permitted set was opened under root. Returns the list."""
     root = os.path.abspath(root) + os.sep
     under = sorted({p for p in OPENED if p.startswith(root)})
-    ok_prefix = (root + "scripts" + os.sep,)
-    ok_files = {root + os.path.join("paper", "tex", "sections", "appendix.tex")}
+    ok_prefix = (root + "gauge" + os.sep,)
+    ok_files = {os.path.abspath(appendix)}
     bad = []
     for p in under:
         rel = p[len(root):]
@@ -158,7 +160,7 @@ def typo(s: str) -> str:
 
 
 # ----------------------------------------------------------------------------- the record
-def build_record(np, T, V4):
+def build_record(np, T, CR):
     base = np.array([ANCHORS[a] for (_, _, a) in PLAN], dtype=float)
     days = [d for (d, _, _) in PLAN]
     tods = [t for (_, t, _) in PLAN]
@@ -167,11 +169,11 @@ def build_record(np, T, V4):
     assert len(set(zip(days, tods))) == SPAN, "duplicate (day, timeslot)"
     assert all(0 <= t <= 47 for t in tods)
     rng = np.random.default_rng(SEED_RIGID)
-    P = V4.rigid(base, rng)                      # benchmark's own per-question transform
+    P = CR.rigid(base, rng)                      # benchmark's own per-question transform
     it = T.F_rg_numeric(None, rng, SPAN, P)      # benchmark's own gold, question and magnitude
     if it is None:
         raise SystemExit("F_rg_numeric returned None (radius of gyration under 1 km)")
-    body = V4.render_xy(np.array(days), np.array(tods), P)   # benchmark's own renderer
+    body = CR.render_xy(np.array(days), np.array(tods), P)   # benchmark's own renderer
     return days, tods, P, it, body
 
 
@@ -254,7 +256,8 @@ def region(page: str, name: str) -> str:
 # ----------------------------------------------------------------------------- main
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--root", required=True, help="path to the benchmark workspace holding scripts/ and paper/ (read only)")
+    ap.add_argument("--root", required=True, help="repository root holding gauge/ (read only)")
+    ap.add_argument("--appendix", help="the paper's appendix.tex (default: <root>/paper/tex/sections/appendix.tex)")
     ap.add_argument("--html", help="index.html whose DEMO markers are filled in")
     ap.add_argument("--check", action="store_true",
                     help="do not write; exit 1 if the page differs from a fresh build")
@@ -262,20 +265,21 @@ def main():
     a = ap.parse_args()
 
     root = os.path.abspath(a.root)
-    scripts = os.path.join(root, "scripts")
-    for f in ("tasks_v41.py", "tally_v4.py"):
+    scripts = os.path.join(root, "gauge")
+    for f in ("tasks_main.py", "coord_records.py"):
         if not os.path.isfile(os.path.join(scripts, f)):
             raise SystemExit(f"{f} not found under {scripts}")
     sys.addaudithook(_hook)                     # record every file opened from here on
     sys.path.insert(0, scripts)
     import numpy as np
-    import tasks_v41 as T      # the ORIGINAL generator: F_rg_numeric
-    import tally_v4 as V4      # the ORIGINAL rigid transform and renderer
+    import tasks_main as T      # the generator: F_rg_numeric
+    import coord_records as CR      # the rigid transform and renderer
 
-    tex = open(os.path.join(root, "paper", "tex", "sections", "appendix.tex"), encoding="utf-8").read()
+    appendix = a.appendix or os.path.join(root, "paper", "tex", "sections", "appendix.tex")
+    tex = open(appendix, encoding="utf-8").read()
     pieces = appendix_pieces(tex)
 
-    days, tods, P, it, body = build_record(np, T, V4)
+    days, tods, P, it, body = build_record(np, T, CR)
 
     # ---- checks (written to be able to fail)
     assert it["task"] == "gyration_km" and it["skmob"] == "radius_of_gyration", it["task"]
@@ -289,7 +293,7 @@ def main():
     assert pieces["header"] == "Here is a person's location record. Each line is day, timeslot, place."
     assert pieces["ref_code"][1].startswith("r_g = 0.5 * np.sqrt("), pieces["ref_code"]
 
-    opened = audit_report(root)   # raises if anything outside the permitted set was opened
+    opened = audit_report(root, appendix)   # raises if anything outside the permitted set was opened
 
     data = dict(
         family="gyration_km (radius of gyration, spatial-geometric)",
@@ -299,7 +303,7 @@ def main():
         unrounded_km=round(float(it["mag"]), 6),
         question=it["q"],
         body=body,
-        original_functions=["tasks_v41.F_rg_numeric", "tally_v4.rigid", "tally_v4.render_xy"],
+        original_functions=["tasks_main.F_rg_numeric", "coord_records.rigid", "coord_records.render_xy"],
         files_opened_under_root=opened,
     )
     print(f"made-up record: {n_rows} rows over days {sorted(set(days))}")

@@ -19,7 +19,7 @@ which cannot manufacture an effect where the paper reports none.
 
 Input: the scored result files listed in SOURCES (family_cis.py, score_control_ladder.py and
 score_compare.py supply the claims).
-Output: results/v41_multiplicity.json.
+Output: results/multiplicity.json.
 
 Usage:
   python gauge/multiplicity.py        (runs on import; takes no arguments)
@@ -72,18 +72,18 @@ counts, total = {}, 0
 SOURCES = {
     # family_cis.py's output is the source of the main results table, of every "clears its baseline"
     # verdict and of the pair-level counts, so it belongs in the denominator.
-    "family cells (main table)": "results/v41_family_cis.json",
-    "main screen (v4.1)": "results/degeneracy_screen_v41.json",
-    "tolerance gate": "results/v41_tolerance_gate.json",
-    "continuous metric": "results/v41_continuous_metric.json",
-    "distributional rung": "results/v41_distributional_rung.json",
-    "claim verification": "results/v41_claim_verification.json",
-    "error taxonomy": "results/v41_error_taxonomy.json",
-    "mitigation": "results/v41_mitigation_scored.json",
-    "control + ladder": "results/v41_control_ladder_scored.json",
-    "comparison arm": "results/v41_compare_scored.json",
-    "wording study": "results/v41_templates_scored.json",
-    "representation probe": "results/v41_probe.json",
+    "family cells (main table)": "results/family_cis.json",
+    "main screen": "results/degeneracy_screen.json",
+    "tolerance gate": "results/tolerance_gate.json",
+    "continuous metric": "results/continuous_metric.json",
+    "distributional rung": "results/distributional_rung.json",
+    "claim verification": "results/claim_verification.json",
+    "error taxonomy": "results/error_taxonomy.json",
+    "sampling": "results/scored_sampling.json",
+    "control + ladder": "results/scored_control_ladder.json",
+    "comparison arm": "results/scored_compare.json",
+    "wording study": "results/scored_templates.json",
+    "representation probe": "results/representation_probe.json",
 }
 for name, path in SOURCES.items():
     p = os.path.join(ROOT, path)
@@ -105,17 +105,17 @@ claims = []
 # the baseline, which is a significance decision, so those cells belong in the corrected family.
 # Adding them makes the correction stricter, which cannot manufacture an effect where none is
 # reported.
-fc = os.path.join(ROOT, "results/v41_family_cis.json")
+fc = os.path.join(ROOT, "results/family_cis.json")
 if os.path.exists(fc):
     for k, v in json.load(open(fc)).items():
         if isinstance(v, dict) and "gain_ci" in v and "gain" in v:
             claims.append((f"family|{k}", v["gain"], v["gain_ci"][0], v["gain_ci"][1]))
-cl = os.path.join(ROOT, "results/v41_control_ladder_scored.json")
+cl = os.path.join(ROOT, "results/scored_control_ladder.json")
 if os.path.exists(cl):
     for k, v in json.load(open(cl)).items():
         if "gain_ci" in v:
             claims.append((k, v["gain"], v["gain_ci"][0], v["gain_ci"][1]))
-cmp_ = os.path.join(ROOT, "results/v41_compare_scored.json")
+cmp_ = os.path.join(ROOT, "results/scored_compare.json")
 if os.path.exists(cmp_):
     for k, v in json.load(open(cmp_)).items():
         if isinstance(v, dict) and v.get("pooled_ci") and np.isfinite(v["pooled_ci"][0]):
@@ -135,7 +135,7 @@ else:
     if not killed:
         print("     none — every nominally significant claim survives the correction")
 
-dst = os.path.join(ROOT, "results/v41_multiplicity.json")
+dst = os.path.join(ROOT, "results/multiplicity.json")
 _by_src = collections.Counter(k.split("|")[0] for k, *_ in claims)
 _surv = collections.Counter(claims[i][0].split("|")[0]
                             for i in range(len(claims)) if rej[i]) if claims else {}

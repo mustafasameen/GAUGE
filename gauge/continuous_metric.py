@@ -20,8 +20,8 @@ relative error is unbounded and a few pathological outputs dominate a mean; the 
 1 / n, the smallest measurable accuracy in a cell, so that a zero cannot be confused with too few
 items to measure a small effect.
 
-Input: results/tally_v41.jsonl and the five core runs.
-Output: results/v41_continuous_metric.json.
+Input: results/questions.jsonl and the five main runs.
+Output: results/continuous_metric.json.
 
 Usage:
   python gauge/continuous_metric.py
@@ -34,14 +34,14 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from eval_factqa import norm
+from eval_model import norm
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-RUNS = {"phi35mini": "results/v41core_phi35mini.json",
-        "mistral7b": "results/v41core_mistral7b.json",
-        "llama8b": "results/v41core_llama8b.json",
-        "gemma3_12b": "results/v41pilot_gemma3_12b.json",
-        "llama70b": "results/v41core_llama70b.json"}
+RUNS = {"phi35mini": "results/main_phi35mini.json",
+        "mistral7b": "results/main_mistral7b.json",
+        "llama8b": "results/main_llama8b.json",
+        "gemma3_12b": "results/primary_gemma3_12b.json",
+        "llama70b": "results/main_llama70b.json"}
 GEOM = ["gyration_km", "max_distance", "total_distance", "longest_jump"]
 COUNT = ["day_distinct", "core_set", "longest_stay"]
 
@@ -95,7 +95,7 @@ def pathology_rate(pv, gv):
 
 
 def main():
-    items = [json.loads(l) for l in open(os.path.join(ROOT, "results/tally_v41.jsonl"))]
+    items = [json.loads(l) for l in open(os.path.join(ROOT, "results/questions.jsonl"))]
     gold = [it["a"].lower() for it in items]
     preds = {}
     for t, p in RUNS.items():
@@ -156,7 +156,7 @@ def main():
     print("\nSTEP 4 (resolution): the smallest measurable accuracy per cell is 1/n; every cell here")
     print("pools all spans, so n >= 1,500 and resolution <= 0.0007. A zero exact-match score is")
     print("therefore NOT a resolution artifact -- it is measurable and it is zero.")
-    dst = os.path.join(ROOT, "results/v41_continuous_metric.json")
+    dst = os.path.join(ROOT, "results/continuous_metric.json")
     json.dump(out, open(dst, "w"), indent=1, default=str)
     print(f"\nwrote {dst}")
 

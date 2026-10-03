@@ -5,24 +5,24 @@ For a given record, all five rungs carry the identical gold, so the majority bas
 across rungs by construction and a jump in accuracy cannot come from an easier answer space. The
 script asserts this and prints the per-rung baseline. The rungs are defined in tasks_ladder.py.
 
-Input: data/yjmob/yjmob_v4.parquet (from export_v4.py).
-Output: results/tally_ladder.jsonl (2,000 items: 4 record lengths x 100 records x 5 rungs).
+Input: data/yjmob/yjmob_export.parquet (from export_yjmob.py).
+Output: results/questions_ladder.jsonl (2,000 items: 4 record lengths x 100 records x 5 rungs).
 
 Usage:
-  python gauge/tally_ladder.py --data data/yjmob/yjmob_v4.parquet --out results/tally_ladder.jsonl
+  python gauge/generate_ladder.py --data data/yjmob/yjmob_export.parquet --out results/questions_ladder.jsonl
 """
 import argparse, collections, hashlib, json, os, sys
 import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import tasks_ladder as L
-from tally_v41 import rigid, SLOTS_PER_DAY, SPLIT_DAY, MAX_PROMPT_CHARS
+from generate_questions import rigid, SLOTS_PER_DAY, SPLIT_DAY, MAX_PROMPT_CHARS
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--data", default="data/yjmob/yjmob_v4.parquet")
+ap.add_argument("--data", default="data/yjmob/yjmob_export.parquet")
 ap.add_argument("--spans", default="32,64,128,256")
 ap.add_argument("--per-cell", type=int, default=100)
 ap.add_argument("--seed", type=int, default=0)
-ap.add_argument("--out", default="results/tally_ladder.jsonl")
+ap.add_argument("--out", default="results/questions_ladder.jsonl")
 a = ap.parse_args()
 
 rng = np.random.default_rng(a.seed)

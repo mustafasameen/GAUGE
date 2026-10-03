@@ -24,7 +24,7 @@ access outside the allowlist and names that were not bound are rejected. A rejec
 scores wrong and is counted, never silently dropped. The whitelist was written for this study;
 do not treat it as a general security boundary.
 
-Usage: imported by tally_tool.py, score_tool.py and program_equivalence.py. Run
+Usage: imported by generate_tool.py, score_tool.py and program_equivalence.py. Run
 `python gauge/tasks_tool.py` for the self-tests.
 """
 from __future__ import annotations

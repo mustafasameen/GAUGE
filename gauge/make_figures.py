@@ -8,8 +8,8 @@ fig1() (the number of families that ever clear their baseline, per model) is def
 of the default run. fig_frontier.pdf and fig_ladder.pdf are made by make_frontier_figure.py and
 make_ladder_figure.py, which import the style helpers from this module.
 
-Input: results/v41_family_cis.json, results/v41_absence_all_models.json and
-results/v41_error_taxonomy.json.
+Input: results/family_cis.json, results/absence_all_models.json and
+results/error_taxonomy.json.
 
 Requires matplotlib, fonttools (for the macOS font-collection helper) and the ghostscript command
 `gs` (used by crop_figure.py).
@@ -174,7 +174,7 @@ def panel(ax, letter, text="", letter_size=10, dx=-22):
 
 
 def load():
-    return json.load(open(os.path.join(ROOT, "results", "v41_family_cis.json")))
+    return json.load(open(os.path.join(ROOT, "results", "family_cis.json")))
 
 
 def fig1(d):
@@ -275,9 +275,9 @@ def fig4():
 
     The unanswerable half is the family `retrieve_probe` inside the main 34,200-question set, which
     every model ran. Correct abstention is saying "none" when the record lacks the answer. The figure
-    reads results/v41_absence_all_models.json and asserts the numbers that the text states.
+    reads results/absence_all_models.json and asserts the numbers that the text states.
     """
-    a = json.load(open(os.path.join(ROOT, "results", "v41_absence_all_models.json")))
+    a = json.load(open(os.path.join(ROOT, "results", "absence_all_models.json")))
     spans = a["spans"]
     order = ["Phi-3.5-mini", "Mistral-7B", "Llama-3.1-8B", "Gemma-3-12B", "Llama-3.1-70B"]
     fig, ax = plt.subplots(figsize=(3.33, 2.25))
@@ -327,7 +327,7 @@ def fig_overview():
     (b) what the field does with it: generate trajectories, score descriptor distributions
     (c) what comes back when one person's descriptor is recovered from their own record: the best gain
         of Llama-3.1-70B for distinct places per day and for radius of gyration, read from
-        results/v41_family_cis.json
+        results/family_cis.json
     """
     import matplotlib.patches as mp
     # wspace is explicit: panel() hangs the bold letter 22 pt left of its axes, so at the default
@@ -370,7 +370,7 @@ def fig_overview():
     panel(c, "c", dx=-2, text="what comes back")
     # This panel carries the paper's thesis with measured gains: the same model, the same record,
     # two descriptors, opposite outcomes. Numbers are read from the scored artifact.
-    _cis = json.load(open(os.path.join(ROOT, "results", "v41_family_cis.json")))
+    _cis = json.load(open(os.path.join(ROOT, "results", "family_cis.json")))
     def _best(fam):
         g = [v["gain"] for k, v in _cis.items()
              if k.startswith("llama70b|%s|" % fam) and isinstance(v, dict) and "gain" in v]
@@ -420,7 +420,7 @@ def fig_taxonomy():
     answer, when that answer dominates); wrong magnitude (off by more than 2x); outside the answer
     range; no answer (nothing parseable). Averaged over the four geometric families.
     """
-    tax = json.load(open(os.path.join(ROOT, "results", "v41_error_taxonomy.json")))["taxonomy"]
+    tax = json.load(open(os.path.join(ROOT, "results", "error_taxonomy.json")))["taxonomy"]
     # all six categories, so every bar sums to 1 and nothing is silently dropped
     CATS = [("correct", "correct"), ("close", "within a factor of 2"),
             ("near_constant", "a repeated value"), ("wrong_magnitude", "wrong magnitude"),

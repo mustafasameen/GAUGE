@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Place-record question families (tiers A to E) and the helpers the v4.1 generator reuses.
+"""Place-record question families (tiers A to E) and the helpers the benchmark generator reuses.
 
-The v4.1 generator (tally_v41.py) imports relabel, render, SLOTS_PER_DAY and SPLIT_DAY from this
-module, and tally_v4.py imports the task list. The task families defined here are an earlier
-question set: retrieval, aggregation, ranking, home and work inference, and day-level structure.
-They are not part of the 34,200-question benchmark.
+generate_questions.py imports relabel, render, SLOTS_PER_DAY and SPLIT_DAY from this module, and
+coord_records.py imports the task list. The task families defined here form a separate question
+set: retrieval, aggregation, ranking, home and work inference, and day-level structure. They are
+not part of the 34,200-question benchmark.
 
 Input: a parquet file of per-person place-rank records, for example data/yjmob/yjmob_ranks.parquet.
 Output: an items file (JSON lines) and a screen file with one answer-concentration row per family.
 
 Usage:
-  python gauge/tally_v3.py --data data/yjmob/yjmob_ranks.parquet --out results/tally_v3.jsonl
+  python gauge/place_records.py --data data/yjmob/yjmob_ranks.parquet --out results/place_questions.jsonl
 """
 from __future__ import annotations
 import argparse, collections, itertools, json, os, re
@@ -251,7 +251,7 @@ def main():
     ap.add_argument("--users", type=int, default=3000)
     ap.add_argument("--split-day", type=int, default=SPLIT_DAY)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="results/tally_v3.jsonl")
+    ap.add_argument("--out", default="results/place_questions.jsonl")
     a = ap.parse_args()
 
     rng = np.random.default_rng(a.seed)

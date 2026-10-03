@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
-# Test that gauge/tally_v41.py rebuilds the question set that was scored for the paper.
+# Test that gauge/generate_questions.py rebuilds the question set that was scored for the paper.
 #
 # usage: tools/test_generator_reproduces.sh PARQUET WORKDIR
-#   PARQUET  the file written by gauge/export_v4.py (for example data/yjmob/yjmob_v4.parquet)
+#   PARQUET  the file written by gauge/export_yjmob.py (for example data/yjmob/yjmob_export.parquet)
 #   WORKDIR  a new or empty directory for the outputs; nothing else is written
 #
 # Three checks, each printing PASS or FAIL:
-#   1. tally_v41.py --only-coord writes the 6,000 coordinate items of the corrected-header set.
+#   1. generate_questions.py --only-coord writes the 6,000 coordinate items of the corrected-header set.
 #   2. A full run writes 34,200 items.
 #   3. After tools/reported_header.py restores the header "day, timeslot, place" on the coordinate
 #      prompts, the full run matches the question set that was scored, byte for byte.
 # The exit status is 0 only if all three pass.
 #
-# A full run of tally_v41.py ends with an UnboundLocalError about `hashlib`, raised after the items
-# file has been written completely (a local import inside main() hides the module-level one on the
-# full path). The generator is left exactly as it was used, so this script accepts that one error
-# and nothing else.
+# A full run of generate_questions.py ends with an UnboundLocalError about `hashlib`, raised after
+# the items file has been written completely (a local import inside main() hides the module-level
+# one on the full path). The generator is left exactly as it was used, so this script accepts that
+# one error and nothing else.
 #
 # Published values. REPORTED is the md5 of the 34,200-question set behind the paper's main tables.
 # CORRECTED_COORD is the md5 of the 6,000 coordinate items with the corrected column header.
@@ -45,7 +45,7 @@ fail=0
 cd "$REPO" || exit 2
 
 # 1. coordinate items only
-"$PYTHON" gauge/tally_v41.py --data "$PQ" --only-coord --out "$W/coord.jsonl" > "$W/coord.log" 2>&1
+"$PYTHON" gauge/generate_questions.py --data "$PQ" --only-coord --out "$W/coord.jsonl" > "$W/coord.log" 2>&1
 rc=$?
 got="$(md5f "$W/coord.jsonl" 2>/dev/null)"
 if [ "$rc" -eq 0 ] && [ "$got" = "$CORRECTED_COORD" ]; then
@@ -55,7 +55,7 @@ else
 fi
 
 # 2. full run
-"$PYTHON" gauge/tally_v41.py --data "$PQ" --out "$W/full.jsonl" > "$W/full.log" 2>&1
+"$PYTHON" gauge/generate_questions.py --data "$PQ" --out "$W/full.jsonl" > "$W/full.log" 2>&1
 rc=$?
 n="$(nlines "$W/full.jsonl" 2>/dev/null)"
 if [ "$rc" -ne 0 ] && ! grep -q "UnboundLocalError.*hashlib" "$W/full.log"; then

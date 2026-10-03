@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Geometry and multi-record question families of the earlier v4 generator, plus shared helpers.
+"""Geometry and multi-record question families, plus the helpers that the generators share.
 
-The v4.1 generator (tally_v41.py) imports MAX_PROMPT_CHARS, rigid and render_xy from this module.
-The rest of the file builds the earlier v4 item set: the v3 tasks at 300 questions per cell, a
-binned radius-of-gyration family (tier F) and a which-person family (tier G). That item set is not
-part of the 34,200-question benchmark.
+generate_questions.py imports MAX_PROMPT_CHARS, rigid and render_xy from this module. The rest of
+the file builds a separate item set: the place-record tasks of place_records.py at 300 questions
+per cell, a binned radius-of-gyration family (tier F) and a which-person family (tier G). That item
+set is not part of the 34,200-question benchmark.
 
 Coordinates are released only under a per-item random rigid transform: rotation, reflection and
 integer translation. Distances stay exact and absolute position is destroyed, which closes the route
@@ -12,17 +12,18 @@ through memorised coordinates in the same way that per-item place relabelling do
 Gold answers are computed from the transformed, rounded coordinates that the prompt shows. The data
 provider does not disclose the city (Yabe et al. 2024), so no place is mapped, geocoded or named.
 
-Input: data/yjmob/yjmob_v4.parquet (written by export_v4.py).
-Output: results/tally_v4.jsonl and results/tally_v4_screen.json.
+Input: data/yjmob/yjmob_export.parquet (written by export_yjmob.py).
+Output: results/coord_questions.jsonl and results/coord_questions_screen.json.
 
 Usage:
-  python gauge/tally_v4.py --data data/yjmob/yjmob_v4.parquet --out results/tally_v4.jsonl
+  python gauge/coord_records.py --data data/yjmob/yjmob_export.parquet --out results/coord_questions.jsonl
 """
 from __future__ import annotations
 import argparse, collections, itertools, json, os, re, sys
 import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from tally_v3 import (TASKS as T3, MIN_OBS as MIN3, relabel, render, NIGHT, SLOTS_PER_DAY, SPLIT_DAY)
+from place_records import (TASKS as PLACE_TASKS, MIN_OBS as PLACE_MIN_OBS, relabel, render, NIGHT,
+                           SLOTS_PER_DAY, SPLIT_DAY)
 
 RG_EDGES = [3.1, 5.7, 8.9, 13.6]  # pooled quintiles of the radius of gyration, in km
 RG_LABEL = ["A", "B", "C", "D", "E"]
@@ -128,12 +129,12 @@ def make_G(by, users, rng, K, span_days):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", default="data/yjmob/yjmob_v4.parquet")
+    ap.add_argument("--data", default="data/yjmob/yjmob_export.parquet")
     ap.add_argument("--spans", default="8,16,32,64,128,256,512")
     ap.add_argument("--per-cell", type=int, default=300)
     ap.add_argument("--users", type=int, default=20000)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="results/tally_v4.jsonl")
+    ap.add_argument("--out", default="results/coord_questions.jsonl")
     a = ap.parse_args()
 
     rng = np.random.default_rng(a.seed)
@@ -164,8 +165,8 @@ def main():
                                 f"Answer with the value only."))
         items.append(it)
 
-    # ---- tiers A-E, ported verbatim from v3 -------------------------------------------------
-    for span, fn in itertools.product(SPANS, T3):
+    # ---- tiers A-E, as defined in place_records.py ------------------------------------------
+    for span, fn in itertools.product(SPANS, PLACE_TASKS):
         made, tries = 0, 0
         while made < a.per_cell and tries < a.per_cell * 300:
             tries += 1
@@ -177,7 +178,7 @@ def main():
             it = fn(s, rng, span)
             if not it:
                 drops[f"reject_{fn.__name__}"] += 1; continue
-            if span < MIN3[it["task"]]:
+            if span < PLACE_MIN_OBS[it["task"]]:
                 break
             assert int(s.day.max()) < SPLIT_DAY
             emit(it, s, span)

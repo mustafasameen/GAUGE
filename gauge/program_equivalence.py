@@ -18,10 +18,10 @@ Per model and family the script reports the number of expressions asked for (n),
 many were correct on their own record ("right here"), how many of those were also equivalent on all
 50 held-out records, and the difference ("lucky").
 
-Input: results/tally_tool.jsonl, the runs results/v41tool_<tag>.json, and results/_pts_pool.json,
+Input: results/questions_tool.jsonl, the runs results/tool_<tag>.json, and results/_pts_pool.json,
 a JSON list of {"pts": [[x, y], ...]} records to draw probes from (tools/make_points_pool.py builds
 one from the tool items).
-Output: results/v41_program_equivalence.json.
+Output: results/program_equivalence.json.
 
 Usage:
   python gauge/program_equivalence.py        (runs on import; takes no arguments)
@@ -30,7 +30,7 @@ import json, os, sys, collections
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import tasks_tool as T
-from eval_factqa import norm
+from eval_model import norm
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 NPROBE = 50
@@ -47,13 +47,13 @@ rng = np.random.default_rng(0)
 _pool = [np.array(it["pts"], float) for it in json.load(open(f"{ROOT}/results/_pts_pool.json"))]
 PROBES_ALL = _pool
 
-items = [json.loads(l) for l in open(f"{ROOT}/results/tally_tool.jsonl")]
+items = [json.loads(l) for l in open(f"{ROOT}/results/questions_tool.jsonl")]
 out = {}
 print(f"EXTENSIONAL EQUIVALENCE — each expression re-run on {NPROBE} HELD-OUT REAL records\n")
 print(f"  {'model':<12}{'family':<16}{'n expr':>8}{'ran here':>10}{'right here':>12}"
       f"{'EQUIVALENT':>12}{'lucky':>8}")
-for rp in sorted(__import__("glob").glob(f"{ROOT}/results/v41tool_*.json")):
-    model = os.path.basename(rp).replace("v41tool_", "").replace(".json", "")
+for rp in sorted(__import__("glob").glob(f"{ROOT}/results/tool_*.json")):
+    model = os.path.basename(rp).replace("tool_", "").replace(".json", "")
     raw = json.load(open(rp))["raw"]["full"]
     if len(raw) != len(items):
         continue
@@ -97,7 +97,7 @@ for model in sorted({k.split("|")[0] for k in out}):
     if r:
         print(f"  {model:<12} correct-on-this-record {r:>5}  |  ALSO equivalent on {NPROBE} REAL "
               f"records: {e:>5}  ({e/r:.1%})")
-json.dump(out, open(f"{ROOT}/results/v41_program_equivalence.json", "w"), indent=1)
-print(f"\nwrote results/v41_program_equivalence.json")
+json.dump(out, open(f"{ROOT}/results/program_equivalence.json", "w"), indent=1)
+print(f"\nwrote results/program_equivalence.json")
 print("READ: a high equivalence rate means the tool-arm score is measuring the COMPUTATION, not a")
 print("coincidence on one record -- which is what the claim that the model knows the computation requires.")

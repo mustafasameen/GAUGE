@@ -13,7 +13,7 @@ and one family each from two other classes, so two panels state what was measure
 Style is imported from make_figures.py (pub_style, the colour sequence and panel()) and not
 re-declared, so that a second copy cannot drift.
 
-Input: results/v41_frontier.json (from score_frontier.py).
+Input: results/frontier.json (from score_frontier.py).
 Output: outputs/tex/figs/fig_frontier.pdf.
 
 Usage:
@@ -30,7 +30,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "gauge"))
 from make_figures import pub_style, panel, OKABE_SEQ, SHORT, save_cropped   # single source of truth for style
 
-SRC = os.path.join(ROOT, "results", "v41_frontier.json")
+SRC = os.path.join(ROOT, "results", "frontier.json")
 OUT = os.path.join(ROOT, "outputs", "tex", "figs", "fig_frontier.pdf")
 
 MODELS = ["Phi-3.5", "Mistral-7B", "Llama-8B", "Gemma-12B", "Llama-70B", "gpt-4o"]

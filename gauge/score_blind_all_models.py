@@ -2,14 +2,14 @@
 """Score the blind control on all five models.
 
 In the blind condition the record is withheld and only the question is shown, so the condition
-bounds what a model answers from prior knowledge alone. Every core run carries a `blind` condition.
+bounds what a model answers from prior knowledge alone. Every main run carries a `blind` condition.
 This script re-scores the generations that are already on disk (no GPU is needed) with the shared
-parser (eval_factqa.norm). Per model it reports how many of the 21 families have blind accuracy of
+parser (eval_model.norm). Per model it reports how many of the 21 families have blind accuracy of
 exactly zero and how many sit at or below the family's best-constant baseline.
 
-Input: results/tally_v41.jsonl and the five core runs (results/v41core_<tag>.json and
-results/v41pilot_gemma3_12b.json).
-Output: results/v41_blind_all_models.json (with --check nothing is written).
+Input: results/questions.jsonl and the five main runs (results/main_<tag>.json and
+results/primary_gemma3_12b.json).
+Output: results/blind_all_models.json (with --check nothing is written).
 
 Usage:
   python gauge/score_blind_all_models.py [--check]
@@ -19,19 +19,19 @@ import argparse, collections, hashlib, json, os, sys, time
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(_ROOT, "gauge"))
-from eval_factqa import norm            # noqa: E402
+from eval_model import norm            # noqa: E402
 
-ITEMS = os.path.join(_ROOT, "results", "tally_v41.jsonl")
-OUT = os.path.join(_ROOT, "results", "v41_blind_all_models.json")
+ITEMS = os.path.join(_ROOT, "results", "questions.jsonl")
+OUT = os.path.join(_ROOT, "results", "blind_all_models.json")
 
-# Gemma's core run carries the v41pilot prefix; the other four carry v41core. Named explicitly so a
+# Gemma's main run carries the primary prefix; the other four carry main. Named explicitly so a
 # rename drops a model loudly rather than silently.
 RUNS = [
-    ("Phi-3.5-mini",  "microsoft/Phi-3.5-mini-instruct",      "v41core_phi35mini"),
-    ("Mistral-7B",    "mistralai/Mistral-7B-Instruct-v0.3",   "v41core_mistral7b"),
-    ("Llama-3.1-8B",  "meta-llama/Llama-3.1-8B-Instruct",     "v41core_llama8b"),
-    ("Gemma-3-12B",   "google/gemma-3-12b-it",                "v41pilot_gemma3_12b"),
-    ("Llama-3.1-70B", "meta-llama/Llama-3.1-70B-Instruct",    "v41core_llama70b"),
+    ("Phi-3.5-mini",  "microsoft/Phi-3.5-mini-instruct",      "main_phi35mini"),
+    ("Mistral-7B",    "mistralai/Mistral-7B-Instruct-v0.3",   "main_mistral7b"),
+    ("Llama-3.1-8B",  "meta-llama/Llama-3.1-8B-Instruct",     "main_llama8b"),
+    ("Gemma-3-12B",   "google/gemma-3-12b-it",                "primary_gemma3_12b"),
+    ("Llama-3.1-70B", "meta-llama/Llama-3.1-70B-Instruct",    "main_llama70b"),
 ]
 
 

@@ -21,8 +21,9 @@ templates. With five templates, the spread reported here is a lower bound as wel
 headline result is a failure, a wording bias that flatters the original template makes the failure
 conservative. That argument would not hold for a positive result.
 
-Input: results/tally_v41_geomfix.jsonl, the first 50 items of each geometric family and length.
-Output: results/tally_templates.jsonl (5,000 items: 20 settings x 50 items x 5 templates).
+Input: results/questions_corrected_header.jsonl, the first 50 items of each geometric family and
+length.
+Output: results/questions_templates.jsonl (5,000 items: 20 settings x 50 items x 5 templates).
 
 Usage:
   python gauge/make_templates.py
@@ -93,7 +94,7 @@ TEMPLATES = {
 
 
 def main():
-    src = [json.loads(l) for l in open(os.path.join(ROOT, "results/tally_v41_geomfix.jsonl"))]
+    src = [json.loads(l) for l in open(os.path.join(ROOT, "results/questions_corrected_header.jsonl"))]
     cells = collections.defaultdict(list)
     for it in src:
         if it["family"] in GEOM:
@@ -128,7 +129,7 @@ def main():
             f"a template changed how many numbers the record contains: {it['family']}"
     print("invariant OK: every template shows the same record values in the same order")
 
-    dst = os.path.join(ROOT, "results/tally_templates.jsonl")
+    dst = os.path.join(ROOT, "results/questions_templates.jsonl")
     with open(dst, "w") as f:
         for o in out:
             f.write(json.dumps(o) + "\n")

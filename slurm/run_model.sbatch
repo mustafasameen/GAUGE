@@ -1,21 +1,21 @@
 #!/bin/bash
 # Generic launcher: one model per array task, one items file per submission.
 #
-#   ITEMS=results/tally_v41.jsonl PREFIX=v41core CONDS=full,blind sbatch slurm/run_model.sbatch
+#   ITEMS=results/questions.jsonl PREFIX=main CONDS=full,blind sbatch slurm/run_model.sbatch
 #
 # Task 0 to 4 run Phi-3.5-mini, Mistral-7B, Llama-3.1-8B, Gemma-3-12B and Llama-3.1-70B. Use
 # --array=3 for a single model. The settings of every run in the paper are in slurm/submit_all.sh.
 #
 # Environment variables (all read when the job starts):
 #   ITEMS        items file (required)
-#   PREFIX       output prefix, for example v41core; the output is results/<PREFIX>_<tag>.json
+#   PREFIX       output prefix, for example main; the output is results/<PREFIX>_<tag>.json
 #   CONDS        conditions to run (default full,blind)
 #   STYLE        prompt style: terse, cot, procedure or fewshot (default terse)
 #   BS           batch size cap (default 64)
 #   TOK_BUDGET   padded-token budget per batch (default 40000)
 #   MAX_NEW      generation cap in tokens (default 24)
 #   MAX_LEN      longest prompt in tokens (default 32768)
-#   EXTRA_ARGS   further arguments for eval_factqa.py, for example "--n-samples 8 --temperature 0.7"
+#   EXTRA_ARGS   further arguments for eval_model.py, for example "--n-samples 8 --temperature 0.7"
 #   EXPECT_MD5   if set, the items file must have this md5
 #   PREFLIGHT    1 (default) runs gauge/preflight_items.py first; use 0 for the program arm, whose
 #                gold is a number while the model writes an expression
@@ -47,8 +47,8 @@ i="${SLURM_ARRAY_TASK_ID:-${TASK:?set TASK when not running under slurm}}"
 ITEMS="${ITEMS:?set ITEMS}"
 PREFIX="${PREFIX:?set PREFIX}"
 TAG="${TAGS[$i]}"
-# The scorers look for the Gemma-3-12B main run under the name v41pilot_gemma3_12b.json.
-if [ "$PREFIX" = "v41core" ] && [ "$TAG" = "gemma3_12b" ]; then NAME="v41pilot_${TAG}"; else NAME="${PREFIX}_${TAG}"; fi
+# The scorers look for the Gemma-3-12B main run under the name primary_gemma3_12b.json.
+if [ "$PREFIX" = "main" ] && [ "$TAG" = "gemma3_12b" ]; then NAME="primary_${TAG}"; else NAME="${PREFIX}_${TAG}"; fi
 OUT="results/${NAME}.json"
 
 if [ -n "${EXPECT_MD5:-}" ]; then
@@ -59,7 +59,7 @@ echo "model=${MODELS[$i]} items=$ITEMS out=$OUT"
 if [ "${PREFLIGHT:-1}" = "1" ]; then python gauge/preflight_items.py "$ITEMS"; fi
 
 # shellcheck disable=SC2086
-python gauge/eval_factqa.py --items "$ITEMS" --model "${MODELS[$i]}" \
+python gauge/eval_model.py --items "$ITEMS" --model "${MODELS[$i]}" \
     --style "${STYLE:-terse}" --bs "${BS:-64}" --tok-budget "${TOK_BUDGET:-40000}" \
     --max-new "${MAX_NEW:-24}" --max-len "${MAX_LEN:-32768}" --conds "${CONDS:-full,blind}" \
     --log-every "${LOG_EVERY:-10}" --ckpt-every "${CKPT_EVERY:-20}" ${EXTRA_ARGS:-} \

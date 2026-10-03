@@ -6,7 +6,7 @@ argument rests on three numbers per model, and the table puts them side by side:
 produce the left column and the right ones.
 
 Columns:
-  exact gain  the headline statistic on the geometric families (results/v41_family_cis.json)
+  exact gain  the headline statistic on the geometric families (results/family_cis.json)
   rank gain   top-decile selection, positioned between a permutation of the truth (the floor, which
               carries no individual information) and the true values (the ceiling)
   count       the share of people placed above the population's true 75th percentile. The truth is
@@ -14,7 +14,7 @@ Columns:
 
 Cells above the unparsed threshold are excluded by score_dissociation.py and reported there.
 
-Input: results/v41_dissociation.json (from score_dissociation.py) and results/v41_family_cis.json.
+Input: results/dissociation.json (from score_dissociation.py) and results/family_cis.json.
 Output: outputs/tex/tabs/tab_dissociation.tex.
 
 Usage:
@@ -25,8 +25,8 @@ import argparse, json, os, sys
 import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DIS = os.path.join(ROOT, "results", "v41_dissociation.json")
-FCI = os.path.join(ROOT, "results", "v41_family_cis.json")
+DIS = os.path.join(ROOT, "results", "dissociation.json")
+FCI = os.path.join(ROOT, "results", "family_cis.json")
 OUT = os.path.join(ROOT, "outputs", "tex", "tabs", "tab_dissociation.tex")
 GEO = {"gyration_km", "longest_jump", "max_distance", "total_distance"}
 MODELS = [("Phi-3.5-mini", "phi35mini", "Phi-3.5"), ("Mistral-7B", "mistral7b", "Mistral-7B"),

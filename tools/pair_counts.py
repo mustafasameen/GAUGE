@@ -2,7 +2,7 @@
 """Count how model-family pairs behave across record length (Section 4.3 and the abstract).
 
 A model-family pair clears a record length when the lower end of the 95% interval of its normalized
-gain is above zero (results/v41_family_cis.json, written by gauge/family_cis.py). Each pair falls
+gain is above zero (results/family_cis.json, written by gauge/family_cis.py). Each pair falls
 in one of three groups:
 
   through  clears at the longest record length that the family is generated at
@@ -15,7 +15,7 @@ and the two longest windowed-count families) and the record length at which each
 "stop" group last clears.
 
 Usage:
-  python tools/pair_counts.py [--cis results/v41_family_cis.json]
+  python tools/pair_counts.py [--cis results/family_cis.json]
 """
 from __future__ import annotations
 
@@ -55,7 +55,7 @@ def share(pairs, keys):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--cis", default="results/v41_family_cis.json")
+    ap.add_argument("--cis", default="results/family_cis.json")
     a = ap.parse_args()
     pairs = load_pairs(a.cis)
     kinds = {k: classify(v) for k, v in pairs.items()}

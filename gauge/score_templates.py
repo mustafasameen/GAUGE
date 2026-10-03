@@ -27,10 +27,10 @@ From Mizrahi et al. (TACL 2024, doi 10.1162/tacl_a_00681):
 The headline result is a failure, and a single template tends to flatter a model, so wording bias
 makes a negative claim conservative. That argument would not hold for a positive result.
 
-Input: results/tally_templates.jsonl with results/v41tmpl_<tag>.json (geometric families), and
-optionally results/tally_templates_probe.jsonl with results/v41tmplP_<tag>.json (retrieval probe
-and position families).
-Output: results/v41_templates_scored.json.
+Input: results/questions_templates.jsonl with results/templates_<tag>.json (geometric families),
+and optionally results/questions_templates_retrieval.jsonl with
+results/templates-retrieval_<tag>.json (retrieval probe and position families).
+Output: results/scored_templates.json.
 
 Usage:
   python gauge/score_templates.py
@@ -44,12 +44,13 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from eval_factqa import norm
+from eval_model import norm
 import expect_models
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-SPECS = [("results/tally_templates.jsonl", "results/v41tmpl_*.json", "geometry"),
-         ("results/tally_templates_probe.jsonl", "results/v41tmplP_*.json", "absence+position")]
+SPECS = [("results/questions_templates.jsonl", "results/templates_*.json", "geometry"),
+         ("results/questions_templates_retrieval.jsonl", "results/templates-retrieval_*.json",
+          "absence+position")]
 ORDER = ["T0_incumbent", "T1_separator", "T2_joiner_case", "T3_serialisation", "T4_paraphrase"]
 
 
@@ -165,7 +166,7 @@ def main():
             print(f"  (Mizrahi: the original template beats the paraphrase average 72.5% of the "
                   f"time, so report the headline against AvgP, not the incumbent.)")
 
-    dst = os.path.join(ROOT, "results/v41_templates_scored.json")
+    dst = os.path.join(ROOT, "results/scored_templates.json")
     json.dump(out, open(dst, "w"), indent=1, default=str)
     print(f"\nwrote {dst}")
 

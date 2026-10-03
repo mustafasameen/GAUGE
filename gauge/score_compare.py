@@ -22,10 +22,10 @@ Measured per model, family and record length:
 arXiv 2603.20642 measures discrimination of magnitudes that are presented in the prompt. The
 quantities here must first be aggregated from a raw record (see tasks_compare.py).
 
-Input: the comparison items (results/tally_compare.jsonl, results/tally_compare_spans.jsonl and
-results/tally_compare_512.jsonl) and the matching runs (results/v41cmp_*.json, results/v41cmpS_*.json
-and results/v41cmp512_*.json).
-Output: results/v41_compare_scored.json.
+Input: the comparison items (results/questions_compare.jsonl,
+results/questions_compare_spans.jsonl and results/questions_compare_512.jsonl) and the matching
+runs (results/compare_*.json, results/compare-spans_*.json and results/compare-512_*.json).
+Output: results/scored_compare.json.
 
 Usage:
   python gauge/score_compare.py
@@ -39,14 +39,14 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from eval_factqa import norm
+from eval_model import norm
 import expect_models
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 NBOOT = 2000
-ITEM_FILES = ["results/tally_compare.jsonl", "results/tally_compare_spans.jsonl",
-              "results/tally_compare_512.jsonl"]
-RUN_GLOBS = ["results/v41cmp_*.json", "results/v41cmpS_*.json", "results/v41cmp512_*.json"]
+ITEM_FILES = ["results/questions_compare.jsonl", "results/questions_compare_spans.jsonl",
+              "results/questions_compare_512.jsonl"]
+RUN_GLOBS = ["results/compare_*.json", "results/compare-spans_*.json", "results/compare-512_*.json"]
 CONTROL = "cmp_daydistinct"
 
 
@@ -104,9 +104,9 @@ def main():
     for g in RUN_GLOBS:
         for p in sorted(glob.glob(os.path.join(ROOT, g))):
             tag = os.path.basename(p).replace(".json", "")
-            src = ("tally_compare.jsonl" if tag.startswith("v41cmp_")
-                   else "tally_compare_512.jsonl" if tag.startswith("v41cmp512_")
-                   else "tally_compare_spans.jsonl")
+            src = ("questions_compare.jsonl" if tag.startswith("compare_")
+                   else "questions_compare_512.jsonl" if tag.startswith("compare-512_")
+                   else "questions_compare_spans.jsonl")
             runs.append((tag.split("_", 1)[1], src, p))
     if not runs:
         sys.exit("no comparison runs found")
@@ -203,7 +203,7 @@ def main():
                  "   (format viable for this model)"))
     print("\n  READ TOGETHER: the format is viable (mistral's control reaches .89-.92 at wide")
     print("  ratios), and llama-70b discriminates geometry where every value question failed.")
-    dst = os.path.join(ROOT, "results/v41_compare_scored.json")
+    dst = os.path.join(ROOT, "results/scored_compare.json")
     json.dump(out, open(dst, "w"), indent=1, default=str)
     print(f"\nwrote {dst}  ({len(out)} model x family x span cells)")
 

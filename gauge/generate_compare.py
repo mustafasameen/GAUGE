@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """Build the comparison items: which of two people has the larger value of a descriptor.
 
-Reuses the coordinate transform and renderer of tally_v41.py by import, so the two records in each
-item look exactly like the records in every other arm and the only new factor is the question
-form. Each item shows two people's records, labelled A and B. Pairs are chosen to hit a target
-ratio between the two true values (within 8%), and every pair is written in both orders. After
-writing the file the script checks that the gold is balanced between A and B, that the two orders
-are equally frequent, and that no realised ratio misses its target by more than 8%.
+Reuses the coordinate transform and renderer of generate_questions.py by import, so the two records
+in each item look exactly like the records in every other arm and the only new factor is the
+question form. Each item shows two people's records, labelled A and B. Pairs are chosen to hit a
+target ratio between the two true values (within 8%), and every pair is written in both orders.
+After writing the file the script checks that the gold is balanced between A and B, that the two
+orders are equally frequent, and that no realised ratio misses its target by more than 8%.
 
-Input: data/yjmob/yjmob_v4.parquet (from export_v4.py).
-Output: results/tally_compare.jsonl (3,000 items at the default record length of 64:
+Input: data/yjmob/yjmob_export.parquet (from export_yjmob.py).
+Output: results/questions_compare.jsonl (3,000 items at the default record length of 64:
 5 quantities x 6 ratios x 50 pairs x 2 orders).
 
 Usage:
-  python gauge/tally_compare.py --data data/yjmob/yjmob_v4.parquet --span 64 --per-cell 50 --out results/tally_compare.jsonl
+  python gauge/generate_compare.py --data data/yjmob/yjmob_export.parquet --span 64 --per-cell 50 --out results/questions_compare.jsonl
 """
 import argparse
 import collections
@@ -27,18 +27,18 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import tasks_compare as C
-from tally_v41 import rigid, render_xy, SLOTS_PER_DAY, SPLIT_DAY, MAX_PROMPT_CHARS
+from generate_questions import rigid, render_xy, SLOTS_PER_DAY, SPLIT_DAY, MAX_PROMPT_CHARS
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", default="data/yjmob/yjmob_v4.parquet")
+    ap.add_argument("--data", default="data/yjmob/yjmob_export.parquet")
     ap.add_argument("--users", type=int, default=6000)
     ap.add_argument("--span", type=int, default=64)
     ap.add_argument("--per-cell", type=int, default=50)   # pairs; each emitted in BOTH orders
     ap.add_argument("--pool", type=int, default=300)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="results/tally_compare.jsonl")
+    ap.add_argument("--out", default="results/questions_compare.jsonl")
     a = ap.parse_args()
 
     rng = np.random.default_rng(a.seed)

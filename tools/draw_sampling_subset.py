@@ -12,8 +12,8 @@ seed gives a different set there. The GPT-4o subset comes from make_subset.py, a
 from this script.
 
 Usage:
-  python tools/draw_sampling_subset.py [--items results/tally_v41.jsonl]
-      [--out results/tally_v41_mitigate.jsonl]
+  python tools/draw_sampling_subset.py [--items results/questions.jsonl]
+      [--out results/questions_sampling.jsonl]
 """
 from __future__ import annotations
 
@@ -27,8 +27,8 @@ FAMILIES = "gyration_km,max_distance,total_distance,longest_jump,day_distinct"
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--items", default="results/tally_v41.jsonl", help="the full items file")
-    ap.add_argument("--out", default="results/tally_v41_mitigate.jsonl", help="subset to write")
+    ap.add_argument("--items", default="results/questions.jsonl", help="the full items file")
+    ap.add_argument("--out", default="results/questions_sampling.jsonl", help="subset to write")
     ap.add_argument("--families", default=FAMILIES, help="comma-separated family list")
     ap.add_argument("--per-cell", type=int, default=150, help="questions per setting")
     ap.add_argument("--seed", type=int, default=0)

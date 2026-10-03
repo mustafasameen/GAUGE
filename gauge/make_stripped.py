@@ -3,9 +3,9 @@
 
 The ladder removes one thing at each step:
   full record      "a person's location record", with timestamped rows
-  relabelled       "a set of numbered points", with the same timestamped rows (make_nomobility.py)
+  relabelled       "a set of numbered points", with the same timestamped rows (make_framing.py)
   stripped         this script: bare x, y rows, with no day and no timeslot
-  two bare points  the decomposition control (pair_distance in tally_control.py)
+  two bare points  the decomposition control (pair_distance in generate_control.py)
 The relabelled to stripped step removes the timestamped record structure while the entity label is
 already neutral.
 
@@ -22,8 +22,8 @@ The gold is unchanged: all four descriptors depend only on the points and their 
 order is preserved exactly. check() verifies these invariants for every item, and `--selftest`
 shows that it detects planted violations.
 
-Input: results/tally_nomobility.jsonl (from make_nomobility.py).
-Output: results/tally_stripped.jsonl.
+Input: results/questions_framing.jsonl (from make_framing.py).
+Output: results/questions_stripped.jsonl.
 
 Usage:
   python gauge/make_stripped.py
@@ -33,8 +33,8 @@ from __future__ import annotations
 import argparse, hashlib, json, os, re, sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-SRC = os.path.join(ROOT, "results/tally_nomobility.jsonl")
-OUT = os.path.join(ROOT, "results/tally_stripped.jsonl")
+SRC = os.path.join(ROOT, "results/questions_framing.jsonl")
+OUT = os.path.join(ROOT, "results/questions_stripped.jsonl")
 INTRO_OLD = "Here is a set of numbered points. Each line is day, timeslot, x, y."
 INTRO_NEW = "Here is a set of points. Each line is x, y."
 ROW = re.compile(r"d(\d+) t(\d+) x(-?\d+) y(-?\d+)")

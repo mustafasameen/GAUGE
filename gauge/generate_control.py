@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """Build the decomposition-control items file (pair_distance, sum_given, max_given).
 
-Reuses the coordinate transform, record rendering and prompt assembly of tally_v41.py by import, so
-that the controls pass through the identical pipeline as the geometric families. A control is only
-informative if it differs from the failing arm in exactly one dimension, and rewriting the renderer
-here would add a second one. `sum_given` and `max_given` print their own list and do not need the
-record, but they are still emitted with a record body and the same prompt scaffold, so the prompt
-shape is the same across all three families and the main run.
+Reuses the coordinate transform, record rendering and prompt assembly of generate_questions.py by
+import, so that the controls pass through the identical pipeline as the geometric families. A
+control is only informative if it differs from the failing arm in exactly one dimension, and
+rewriting the renderer here would add a second one. `sum_given` and `max_given` print their own list
+and do not need the record, but they are still emitted with a record body and the same prompt
+scaffold, so the prompt shape is the same across all three families and the main run.
 
 After writing the file the script prints, per cell, the majority baseline, the number of distinct
 golds and the gold spread, and flags cells whose baseline is above .35.
 
-Input: data/yjmob/yjmob_v4.parquet (from export_v4.py).
-Output: results/tally_control.jsonl (2,250 items: 3 families x 5 record lengths x 150).
+Input: data/yjmob/yjmob_export.parquet (from export_yjmob.py).
+Output: results/questions_control.jsonl (2,250 items: 3 families x 5 record lengths x 150).
 
 Usage:
-  python gauge/tally_control.py --data data/yjmob/yjmob_v4.parquet --out results/tally_control.jsonl
+  python gauge/generate_control.py --data data/yjmob/yjmob_export.parquet --out results/questions_control.jsonl
 """
 import argparse
 import collections
@@ -29,17 +29,17 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import tasks_control as C
-from tally_v41 import rigid, render_xy, SLOTS_PER_DAY, SPLIT_DAY, MAX_PROMPT_CHARS
+from generate_questions import rigid, render_xy, SLOTS_PER_DAY, SPLIT_DAY, MAX_PROMPT_CHARS
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", default="data/yjmob/yjmob_v4.parquet")
+    ap.add_argument("--data", default="data/yjmob/yjmob_export.parquet")
     ap.add_argument("--users", type=int, default=6000)
     ap.add_argument("--per-cell", type=int, default=150)
     ap.add_argument("--spans", default="32,64,128,256,512")
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="results/tally_control.jsonl")
+    ap.add_argument("--out", default="results/questions_control.jsonl")
     a = ap.parse_args()
 
     rng = np.random.default_rng(a.seed)

@@ -7,7 +7,7 @@ controls (panel a) hand the model an intermediate quantity and ask for one link 
 The five ladder rungs (panel b) hand it progressively more of the geometry. The controls place the
 failure: `max_given` clears for every model, and `pair_distance` clears for none.
 
-Input: results/v41_control_ladder_scored.json (from score_control_ladder.py).
+Input: results/scored_control_ladder.json (from score_control_ladder.py).
 Output: outputs/tex/figs/fig_ladder.pdf.
 
 Usage:
@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from make_figures import pub_style, OKABE_SEQ, FIGS, panel, SHORT, save_cropped  # noqa: E402  same style as every other figure
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(ROOT, "results", "v41_control_ladder_scored.json")
+SRC = os.path.join(ROOT, "results", "scored_control_ladder.json")
 OUT = os.path.join(FIGS, "fig_ladder.pdf")
 
 MODELS = [(m, SHORT[m]) for m in ("phi35mini", "mistral7b", "llama8b", "gemma3_12b", "llama70b")]

@@ -2,20 +2,20 @@
 """Score the stripped rung: relabelled (timestamped rows) versus stripped (bare x, y rows), paired.
 
 The estimator is not reimplemented: boot, summarize and predict are imported from
-score_nomobility.py, so every interval sits on the same cluster bootstrap as the rest of the
-framing arm. summarize() names its two conditions full and nomob internally; they are renamed
-here to relabelled and stripped, so that the output cannot be misread.
+score_framing.py, so every interval sits on the same cluster bootstrap as the rest of the
+framing arm. summarize() labels its two conditions with the key suffixes of the framing scorer;
+they are renamed here to relabelled and stripped, so that the output cannot be misread.
 
 Two additions. (1) A replication check: the regenerated relabelled condition should be
-byte-identical to the earlier run (results/v41nomob_<tag>.json), which is what licenses comparing
+byte-identical to the earlier run (results/framing_<tag>.json), which is what licenses comparing
 this job with that job's `full` condition. (2) The paired delta per family, because the explanation
 that the ordering of timestamped rows matters predicts an effect only in the order-dependent
 families (longest_jump and total_distance). Decision rule: a difference is non-null if and only if
 the paired 95% interval excludes 0.
 
-Input: results/tally_stripped.jsonl and results/v41strip_<tag>.json (conditions `nomobility` and
+Input: results/questions_stripped.jsonl and results/stripped_<tag>.json (conditions `nomobility` and
 `stripped`).
-Output: results/v41_stripped_scored.json.
+Output: results/scored_stripped.json.
 
 Usage:
   python gauge/score_stripped.py [--selftest]
@@ -25,14 +25,14 @@ import argparse, collections, glob, json, os, sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from score_nomobility import boot, summarize, predict   # noqa: E402
+from score_framing import boot, summarize, predict   # noqa: E402
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 RES = os.path.join(ROOT, "results")
-RENAME = {"acc_full": "acc_relabelled", "acc_nomob": "acc_stripped",
-          "gain_full": "gain_relabelled", "gain_nomob": "gain_stripped",
-          "unparsed_full": "unparsed_relabelled", "unparsed_nomob": "unparsed_stripped",
-          "n_disc_full_right": "n_disc_relabelled_right", "n_disc_nomob_right": "n_disc_stripped_right"}
+RENAME = {"acc_full": "acc_relabelled", "acc_framing": "acc_stripped",
+          "gain_full": "gain_relabelled", "gain_framing": "gain_stripped",
+          "unparsed_full": "unparsed_relabelled", "unparsed_framing": "unparsed_stripped",
+          "n_disc_full_right": "n_disc_relabelled_right", "n_disc_framing_right": "n_disc_stripped_right"}
 
 
 def rename(d):
@@ -74,7 +74,7 @@ def selftest():
     print(f"  identical regeneration -> {r}  {'OK' if r == (3, 3) else '*** FAIL'}"); ok &= r == (3, 3)
     r = replication(["Answer: 1", "Answer: 9", "Answer: 3"], p)
     print(f"  planted divergence     -> {r}  {'OK' if r == (2, 3) else '*** FAIL'}"); ok &= r == (2, 3)
-    x = rename({"acc_full": 1, "acc_nomob": 2, "d_acc": 3})
+    x = rename({"acc_full": 1, "acc_framing": 2, "d_acc": 3})
     good = x == {"acc_relabelled": 1, "acc_stripped": 2, "d_acc": 3}
     print(f"  key renaming           -> {x}  {'OK' if good else '*** FAIL'}"); ok &= good
     print(f"SELFTEST: {'PASSED' if ok else '*** FAILED'}")
@@ -83,27 +83,27 @@ def selftest():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--items", default=os.path.join(RES, "tally_stripped.jsonl"))
-    ap.add_argument("--out", default=os.path.join(RES, "v41_stripped_scored.json"))
+    ap.add_argument("--items", default=os.path.join(RES, "questions_stripped.jsonl"))
+    ap.add_argument("--out", default=os.path.join(RES, "scored_stripped.json"))
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
     if a.selftest:
         sys.exit(0 if selftest() else 1)
     items = [json.loads(l) for l in open(a.items)]
-    runs = sorted(r for r in glob.glob(os.path.join(RES, "v41strip_*.json"))
+    runs = sorted(r for r in glob.glob(os.path.join(RES, "stripped_*.json"))
                   if not r.endswith((".ckpt", ".partial")))
     if not runs:
-        sys.exit("no results/v41strip_*.json on disk")
+        sys.exit("no results/stripped_*.json on disk")
     out = {"decision_rule": "non-null iff paired 95% CI excludes 0; no noise-floor override",
            "delta": "acc(relabelled, timestamped rows) - acc(stripped, bare x y rows)",
            "models": {}}
     for rp in runs:
-        tag = os.path.basename(rp)[len("v41strip_"):-len(".json")]
+        tag = os.path.basename(rp)[len("stripped_"):-len(".json")]
         raw = json.load(open(rp)).get("raw") or {}
         rl, st = raw.get("nomobility"), raw.get("stripped")
         if rl is None or st is None or len(rl) != len(items) or len(st) != len(items):
             print(f"SKIP {tag}: conditions missing or misaligned"); continue
-        rep = replication(rl, os.path.join(RES, f"v41nomob_{tag}.json"))
+        rep = replication(rl, os.path.join(RES, f"framing_{tag}.json"))
         cells, fam, allp = {}, collections.defaultdict(lambda: collections.defaultdict(list)), collections.defaultdict(list)
         for f in sorted({it["family"] for it in items}):
             for s in sorted({it["span"] for it in items if it["family"] == f}):

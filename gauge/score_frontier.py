@@ -5,7 +5,7 @@ The GPT-4o arm answers 30 questions per setting, while the open-weight runs answ
 the two side by side at their native sizes would compare estimates whose intervals differ by a
 factor of three for reasons unrelated to the models. Every model is therefore scored here on the
 same 30 items per setting, re-scored from generations already on disk, so n is identical across
-all six columns. Parsing uses the shared parser (eval_factqa.norm), so a prediction becomes an
+all six columns. Parsing uses the shared parser (eval_model.norm), so a prediction becomes an
 answer by the same rule for every model.
 
 Coverage is deliberately uneven, and the output records it: all four spatial-geometric families,
@@ -15,9 +15,9 @@ position) as contrasts. The arm tests the geometric null. It is not a replicatio
 The scorer checks itself first, in both directions: an oracle must score a normalized gain of 1.0
 and the modal constant 0.0.
 
-Input: results/tally_v41.jsonl, results/subset_allspans.json (item indices into the items file),
-results/frontier_gpt4o.json (from run_frontier_probe.py) and the five core runs.
-Output: results/v41_frontier.json.
+Input: results/questions.jsonl, results/subset_allspans.json (item indices into the items file),
+results/frontier_gpt4o.json (from run_frontier.py) and the five main runs.
+Output: results/frontier.json.
 
 Usage:
   python gauge/score_frontier.py [--selftest-only]
@@ -28,16 +28,16 @@ import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "gauge"))
-from eval_factqa import norm                      # identical parsing to the GPU runs, by import
+from eval_model import norm                      # identical parsing to the GPU runs, by import
 
-ITEMS = os.path.join(ROOT, "results", "tally_v41.jsonl")
+ITEMS = os.path.join(ROOT, "results", "questions.jsonl")
 SUBSET = os.path.join(ROOT, "results", "subset_allspans.json")
 FRONTIER = os.path.join(ROOT, "results", "frontier_gpt4o.json")
-OUT = os.path.join(ROOT, "results", "v41_frontier.json")
+OUT = os.path.join(ROOT, "results", "frontier.json")
 
-OPEN_WEIGHT = [("Phi-3.5", "v41core_phi35mini"), ("Mistral-7B", "v41core_mistral7b"),
-               ("Llama-8B", "v41core_llama8b"), ("Gemma-12B", "v41pilot_gemma3_12b"),
-               ("Llama-70B", "v41core_llama70b")]
+OPEN_WEIGHT = [("Phi-3.5", "main_phi35mini"), ("Mistral-7B", "main_mistral7b"),
+               ("Llama-8B", "main_llama8b"), ("Gemma-12B", "primary_gemma3_12b"),
+               ("Llama-70B", "main_llama70b")]
 GEO = {"gyration_km", "max_distance", "total_distance", "longest_jump"}
 PRESENCE = 0.05
 BOOT = 2000

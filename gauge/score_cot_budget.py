@@ -15,18 +15,18 @@ byte-identical generations. The script repeats this check on every invocation an
 run that breaks the property cannot be scored silently.
 
 Baseline, gain and bootstrap are not reimplemented: `boot` and `summarize` are imported from
-score_nomobility.py, so every interval in this arm sits on the same estimator as the framing arm.
-summarize()'s parameter names say full and nomob; here they carry the two budgets. The arithmetic is
-a paired two-condition comparison either way.
+score_framing.py, so every interval in this arm sits on the same estimator as the framing arm.
+summarize()'s parameter names say full and relabelled; here they carry the two budgets. The
+arithmetic is a paired two-condition comparison either way.
 
-Input: results/tally_v41cot.jsonl and the runs results/v41cot4k_llama8b.json and
-results/v41cot8k_llama8b.json (with --single, one run given by --hi).
-Output: results/v41_cot_budget_scored.json (or the file given by --out).
+Input: results/questions_cot.jsonl and the runs results/cot-4k_llama8b.json and
+results/cot-8k_llama8b.json (with --single, one run given by --hi).
+Output: results/scored_cot_budget.json (or the file given by --out).
 
 Usage:
   python gauge/score_cot_budget.py
-  python gauge/score_cot_budget.py --single --hi results/v41cot8k_llama70b.json --tag llama70b
-      --out results/v41_cot_70b_scored.json
+  python gauge/score_cot_budget.py --single --hi results/cot-8k_llama70b.json --tag llama70b
+      --out results/scored_cot_70b.json
   python gauge/score_cot_budget.py --selftest
 """
 from __future__ import annotations
@@ -35,8 +35,8 @@ import argparse, collections, json, os, sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from eval_factqa import norm, ANSWER_RE                      # noqa: E402
-from score_nomobility import boot, summarize, predict        # noqa: E402  (same estimator, on purpose)
+from eval_model import norm, ANSWER_RE                      # noqa: E402
+from score_framing import boot, summarize, predict        # noqa: E402  (same estimator, on purpose)
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 RESULTS = os.path.join(ROOT, "results")
@@ -61,11 +61,11 @@ def determinism_check(ra, rb, ga, gb, fa, fb, lo_cap):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--lo", default=os.path.join(RESULTS, "v41cot4k_llama8b.json"))
-    ap.add_argument("--hi", default=os.path.join(RESULTS, "v41cot8k_llama8b.json"))
-    ap.add_argument("--items", default=os.path.join(RESULTS, "tally_v41cot.jsonl"))
+    ap.add_argument("--lo", default=os.path.join(RESULTS, "cot-4k_llama8b.json"))
+    ap.add_argument("--hi", default=os.path.join(RESULTS, "cot-8k_llama8b.json"))
+    ap.add_argument("--items", default=os.path.join(RESULTS, "questions_cot.jsonl"))
     ap.add_argument("--tag", default="llama8b")
-    ap.add_argument("--out", default=os.path.join(RESULTS, "v41_cot_budget_scored.json"))
+    ap.add_argument("--out", default=os.path.join(RESULTS, "scored_cot_budget.json"))
     ap.add_argument("--single", action="store_true",
                      help="score ONE run against each cell's own floor (no paired budget delta). "
                           "Used for Llama-70B, which has the 8192 point only.")
@@ -73,7 +73,7 @@ def main():
     a = ap.parse_args()
 
     if a.selftest:
-        # the estimator is score_nomobility's, already self-tested there in both directions;
+        # the estimator is score_framing's, already self-tested there in both directions;
         # what is NEW here is the determinism gate, so that is what gets a planted fixture.
         ra = ["x Answer: 1", "y Answer: 2", "cap no marker", "z Answer: 3"]
         rb = ["x Answer: 1", "y Answer: 2", "cap no marker LONGER", "DIFFERENT Answer: 9"]
@@ -169,8 +169,8 @@ def main():
             rec = summarize(fl, cor_b, cor_a, par_b, par_a, uids)
             rec["ceiling_lo"] = sum(1 for i in ix if ga[i] is not None and ga[i] >= mxa) / len(ix)
             rec["ceiling_hi"] = sum(1 for i in ix if gb[i] is not None and gb[i] >= mxb) / len(ix)
-            rec["acc_lo"], rec["acc_hi"] = rec.pop("acc_nomob"), rec.pop("acc_full")
-            rec["gain_lo"], rec["gain_hi"] = rec.pop("gain_nomob"), rec.pop("gain_full")
+            rec["acc_lo"], rec["acc_hi"] = rec.pop("acc_framing"), rec.pop("acc_full")
+            rec["gain_lo"], rec["gain_hi"] = rec.pop("gain_framing"), rec.pop("gain_full")
             cells[f"{a.tag}|{fam}|{span}"] = rec
             print(f"  {fam:<16}{span:>5}{rec['n']:>5}{fl:>7.3f} |{rec['acc_lo']:>9.3f}{rec['acc_hi']:>9.3f}"
                   f"{rec['d_acc']:>+8.3f}{str([round(x,3) for x in rec['d_acc_ci']]):>18} |"
@@ -182,8 +182,8 @@ def main():
                 pool[k].extend(v)
     flp = float(np.mean(pool["maj"]))
     p = summarize(flp, pool["cor_hi"], pool["cor_lo"], pool["par_hi"], pool["par_lo"], pool["uids"])
-    p["acc_lo"], p["acc_hi"] = p.pop("acc_nomob"), p.pop("acc_full")
-    p["gain_lo"], p["gain_hi"] = p.pop("gain_nomob"), p.pop("gain_full")
+    p["acc_lo"], p["acc_hi"] = p.pop("acc_framing"), p.pop("acc_full")
+    p["gain_lo"], p["gain_hi"] = p.pop("gain_framing"), p.pop("gain_full")
     pooled[a.tag] = p
     print("  " + "-" * 104)
     print(f"  {'POOLED':<16}{'--':>5}{p['n']:>5}{flp:>7.3f} |{p['acc_lo']:>9.3f}{p['acc_hi']:>9.3f}"

@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """Score the decomposition controls and the scaffold ladder, with cluster-bootstrap intervals.
 
-For every model the script scores two item files with the shared parser (eval_factqa.norm) and
+For every model the script scores two item files with the shared parser (eval_model.norm) and
 reports the best-constant baseline, accuracy, the normalized gain over the baseline, and a 95%
 interval from a bootstrap over people (several items share a person, so items are not independent):
-  controls  results/tally_control.jsonl against results/v41ctrl2_<tag>.json: max_given, sum_given
+  controls  results/questions_control.jsonl against results/control_<tag>.json: max_given, sum_given
             and pair_distance
-  ladder    results/tally_ladder.jsonl against results/v41lad_<tag>.json: the five rungs L0 to L4,
-            with the jump from each rung to the one above it and a flag when a rung's interval
-            excludes the rung below
+  ladder    results/questions_ladder.jsonl against results/ladder_<tag>.json: the five rungs L0
+            to L4, with the jump from each rung to the one above it and a flag when a rung's
+            interval excludes the rung below
 
 Input: the item files and runs named above.
-Output: results/v41_control_ladder_scored.json (keys control|<family>|<model> and
+Output: results/scored_control_ladder.json (keys control|<family>|<model> and
 ladder|<rung>|<model>). It feeds make_ladder_figure.py.
 
 Usage:
@@ -20,7 +20,7 @@ Usage:
 import collections, glob, json, os, sys
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from eval_factqa import norm
+from eval_model import norm
 import expect_models
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
@@ -60,13 +60,13 @@ def cell(items, raw, sel):
 out = {}
 
 # ---------------- the decomposition controls ----------------
-ci = os.path.join(ROOT, "results/tally_control.jsonl")
+ci = os.path.join(ROOT, "results/questions_control.jsonl")
 if os.path.exists(ci):
     items = [json.loads(l) for l in open(ci)]
     print("DECOMPOSITION CONTROLS — gain with cluster-bootstrap CI over users\n")
     print(f"  {'task':<16}{'model':<12}{'floor':>8}{'acc':>8}{'gain':>9}{'gain 95% CI':>20}")
-    for rp in sorted(glob.glob(os.path.join(ROOT, "results/v41ctrl2_*.json"))):
-        m = os.path.basename(rp).replace("v41ctrl2_", "").replace(".json", "")
+    for rp in sorted(glob.glob(os.path.join(ROOT, "results/control_*.json"))):
+        m = os.path.basename(rp).replace("control_", "").replace(".json", "")
         raw = json.load(open(rp))["raw"]["full"]
         if len(raw) != len(items):
             print(f"  SKIP {m}"); continue
@@ -79,14 +79,14 @@ if os.path.exists(ci):
     print()
 
 # ---------------- the scaffold ladder ----------------
-li = os.path.join(ROOT, "results/tally_ladder.jsonl")
+li = os.path.join(ROOT, "results/questions_ladder.jsonl")
 if os.path.exists(li):
     items = [json.loads(l) for l in open(li)]
     RUNGS = ["L0_raw", "L1_km", "L2_centred", "L3_dists", "L4_msd"]
     print("SCAFFOLD LADDER — gain with cluster-bootstrap CI over users\n")
     print(f"  {'rung':<14}{'model':<12}{'acc':>8}{'gain':>9}{'gain 95% CI':>20}")
-    for rp in sorted(glob.glob(os.path.join(ROOT, "results/v41lad_*.json"))):
-        m = os.path.basename(rp).replace("v41lad_", "").replace(".json", "")
+    for rp in sorted(glob.glob(os.path.join(ROOT, "results/ladder_*.json"))):
+        m = os.path.basename(rp).replace("ladder_", "").replace(".json", "")
         raw = json.load(open(rp))["raw"]["full"]
         if len(raw) != len(items):
             print(f"  SKIP {m}"); continue
@@ -104,6 +104,6 @@ if os.path.exists(li):
             prev = r["gain"]
         print()
 
-dst = os.path.join(ROOT, "results/v41_control_ladder_scored.json")
+dst = os.path.join(ROOT, "results/scored_control_ladder.json")
 json.dump(out, open(dst, "w"), indent=1, default=str)
 print(f"wrote {dst}  ({len(out)} cells)")

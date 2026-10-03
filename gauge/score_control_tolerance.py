@@ -12,8 +12,8 @@ for all five models, either
 Only a tolerance band separates the two. The factor-of-two rule is the one used in
 error_taxonomy.py, so the controls and the geometric families are scored on one definition.
 
-Input: results/tally_control.jsonl and results/v41ctrl2_<tag>.json for the five models.
-Output: results/v41_control_tolerance.json.
+Input: results/questions_control.jsonl and results/control_<tag>.json for the five models.
+Output: results/scored_control_tolerance.json.
 
 Usage:
   python gauge/score_control_tolerance.py
@@ -26,7 +26,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from eval_factqa import norm  # noqa: E402
+from eval_model import norm  # noqa: E402
 import expect_models  # noqa: E402
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
@@ -34,7 +34,7 @@ MODELS = ["phi35mini", "mistral7b", "llama8b", "gemma3_12b", "llama70b"]
 
 
 def main():
-    items_p = f"{ROOT}/results/tally_control.jsonl"
+    items_p = f"{ROOT}/results/questions_control.jsonl"
     if not os.path.exists(items_p):
         sys.exit(f"MISSING: {items_p}")
     items = [json.loads(l) for l in open(items_p)]
@@ -42,13 +42,13 @@ def main():
     print(f"control items : {items_p}  ({len(items):,} items, families {fams})")
 
     found = [m for m in MODELS
-             if os.path.exists(f"{ROOT}/results/v41ctrl2_{m}.json")]
+             if os.path.exists(f"{ROOT}/results/control_{m}.json")]
     # A partial model set must fail loudly, not score quietly.
     expect_models.check(found, MODELS, label="control tolerance")
 
     out = {}
     for m in found:
-        raw = json.load(open(f"{ROOT}/results/v41ctrl2_{m}.json"))["raw"]["full"]
+        raw = json.load(open(f"{ROOT}/results/control_{m}.json"))["raw"]["full"]
         if len(raw) != len(items):
             sys.exit(f"{m}: {len(raw)} generations vs {len(items)} items")
         pred = [norm(raw[i], items[i]["family"], items[i].get("atype"))
@@ -90,7 +90,7 @@ def main():
                       f"{r['within2x']:11.3f}{r['unparsed']:10.3f}")
         print()
 
-    op = f"{ROOT}/results/v41_control_tolerance.json"
+    op = f"{ROOT}/results/scored_control_tolerance.json"
     json.dump(dict(items=items_p, n_items=len(items), models=found, cells=out),
               open(op, "w"), indent=1)
     print(f"wrote {op}")

@@ -20,9 +20,9 @@ The last two must be read together. A model whose expressions rarely parse has n
 lack the knowledge; it has been shown not to follow the output instruction, which is a different
 claim and is reported as one.
 
-Input: results/tally_tool.jsonl and results/v41tool_<tag>.json (from eval_factqa.py, which stores
+Input: results/questions_tool.jsonl and results/tool_<tag>.json (from eval_model.py, which stores
 the raw expressions).
-Output: results/v41_tool_scored.json.
+Output: results/scored_tool.json.
 
 Usage:
   python gauge/score_tool.py
@@ -31,7 +31,7 @@ import collections, glob, json, os, sys
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import tasks_tool as T
-from eval_factqa import norm
+from eval_model import norm
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 NBOOT = 2000
@@ -47,8 +47,8 @@ def paired_boot(delta, n=NBOOT, seed=0):
 
 
 def main():
-    ip = os.path.join(ROOT, "results/tally_tool.jsonl")
-    runs = sorted(glob.glob(os.path.join(ROOT, "results/v41tool_*.json")))
+    ip = os.path.join(ROOT, "results/questions_tool.jsonl")
+    runs = sorted(glob.glob(os.path.join(ROOT, "results/tool_*.json")))
     if not os.path.exists(ip) or not runs:
         sys.exit("tool control: items or runs not on disk yet")
     items = [json.loads(l) for l in open(ip)]
@@ -57,7 +57,7 @@ def main():
 
     out = {}
     for rp in runs:
-        model = os.path.basename(rp).replace("v41tool_", "").replace(".json", "")
+        model = os.path.basename(rp).replace("tool_", "").replace(".json", "")
         raw = json.load(open(rp))["raw"]["full"]
         if len(raw) != len(items):
             print(f"  SKIP {model}: {len(raw)} vs {len(items)}"); continue
@@ -125,7 +125,7 @@ def main():
               f"{sig}/{len(c)} cells with CI above +0.05, well-formed {wf:.0%})")
         print(f"  {'':<12} {verd}")
 
-    dst = os.path.join(ROOT, "results/v41_tool_scored.json")
+    dst = os.path.join(ROOT, "results/scored_tool.json")
     json.dump(out, open(dst, "w"), indent=1, default=str)
     print(f"\nwrote {dst}  ({len(out)} cells)")
 
