@@ -32,6 +32,17 @@ import ast, math, re
 import itertools
 import numpy as np
 
+# NumPy imports helper modules on the first axis reduction in a process. Inside the sandbox, which
+# has no builtins, that import fails with KeyError('__import__'), so whether an expression scored
+# depended on what the process had run before. Making those calls once here removes the dependence.
+_w = np.zeros((2, 2))
+for _f in ("max", "min", "sum", "mean", "std", "var", "argmax", "argmin", "prod", "ptp", "cumsum"):
+    getattr(np, _f)(_w, axis=0)
+    if hasattr(_w, _f):
+        getattr(_w, _f)(axis=0)
+np.linalg.norm(_w, axis=0); np.sqrt(_w); np.hypot(_w, _w); np.diff(_w, axis=0); np.median(_w, axis=0)
+del _w, _f
+
 KM = 0.5
 
 # ---- the whitelist. Anything outside it is a rejected expression, not an error and not a pass.

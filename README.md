@@ -24,7 +24,7 @@ is in carrying the computation out rather than in knowing what it is: asked for 
 instead of a value, three of the five models write programs that compute the same descriptors
 correctly on 50 records they never saw. A permutation of the true values across people reproduces
 every distributional score we compute while destroying every individual, and the models order people
-on geometric quantities in 53 of 100 settings while stating no individual's value. We give the field
+on geometric quantities in 75 of 100 settings while stating no individual's value. We give the field
 a second axis for evaluating mobility foundation models: recovery from one person's record, with
 exact answers and exact baselines, beside the distributional scores now used.
 

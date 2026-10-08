@@ -71,7 +71,7 @@ IDENTIFIERS = ["GPT-4o", "Llama-3.1-70B", "YJMob100K"]
 # The abstract's last sentence (main.tex:62-64). The fifth finding card is bound to it.
 ABSTRACT_LAST = ("A permutation of the true values across people reproduces every distributional score we compute "
                  "while destroying every individual, and the models order people on geometric quantities in "
-                 "53 of 100 settings while stating no individual's value")
+                 "75 of 100 settings while stating no individual's value")
 
 # ------------------------------------------------------------------------------------------ claims
 # (phrase literally on the page, sentence of the paper that supports it[, phrase to look for in the
@@ -131,15 +131,15 @@ CLAIMS = [
     ("Three of five models do this",
      "three of the five models write programs that compute the same descriptors correctly on 50 records they never saw"),
     # fifth card, the abstract's last result: its numbers and phrases are bound to main.tex:62-64
-    ("53 of 100", ABSTRACT_LAST),
-    ("on geometric quantities in 53 of 100 settings", ABSTRACT_LAST),
+    ("75 of 100", ABSTRACT_LAST),
+    ("on geometric quantities in 75 of 100 settings", ABSTRACT_LAST),
     ("Models order people", ABSTRACT_LAST),
     ("while stating no individual's value", ABSTRACT_LAST),
     ("A permutation of the true values", ABSTRACT_LAST),
     ("reproduces every distributional score", ABSTRACT_LAST),
     ("while destroying every individual", ABSTRACT_LAST),
     # the same count is printed in section 4.1, which the card cites
-    ("53 of 100", "On the ordinal measure 53 of 100 geometric settings reach a rank correlation of at least .20"),
+    ("75 of 100", "On the ordinal measure 75 of 100 geometric settings reach a rank correlation of at least .20"),
     # where a finding sits in the paper (section labels used on the cards)
     ("\u00a74.1", "L:4.1 Main results: the recovery profile", "Main results: the recovery profile"),
     ("\u00a74.3", "L:4.3 Effect of record length", "Effect of record length"),
@@ -571,10 +571,10 @@ def self_test(html: str, pdf_text: str, layout_text: str | None = None) -> bool:
     expect("a transposed digit in the big number (-0.441 for -0.414) is refused", not r["ok"])
     r = analyze(html.replace("20 of 20", "19 of 20"), pdf_text, layout_text)
     expect("'19 of 20' is refused (the paper says twenty of twenty)", not r["ok"])
-    r = analyze(html.replace("53 of 100", "35 of 100"), pdf_text, layout_text)
+    r = analyze(html.replace("75 of 100", "35 of 100"), pdf_text, layout_text)
     expect("'35 of 100' (53 transposed, on the fifth card) is refused", not r["ok"] and bool(r["bad_claims"]))
-    r = analyze(html.replace("53 of 100", "53 of 101"), pdf_text, layout_text)
-    expect("'53 of 101' (101 is printed elsewhere in the paper) passes the bare number check but is refused",
+    r = analyze(html.replace("75 of 100", "75 of 101"), pdf_text, layout_text)
+    expect("'75 of 101' (101 is printed elsewhere in the paper) passes the bare number check but is refused",
            "101" not in r["missing"] and not r["ok"] and "101" in r["unbound"])
 
     # arithmetic is refused: a number that is not printed in the claim's paper sentence
